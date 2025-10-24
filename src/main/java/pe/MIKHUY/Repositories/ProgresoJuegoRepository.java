@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pe.MIKHUY.Entities.ProgresoJuego;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,9 +40,9 @@ public interface ProgresoJuegoRepository extends JpaRepository<ProgresoJuego, UU
     @Query("SELECT pg FROM ProgresoJuego pg WHERE pg.juego.id = :juegoId ORDER BY pg.puntosGanados DESC")
     List<ProgresoJuego> findRankingByJuego(@Param("juegoId") UUID juegoId);
 
-    // Estudiantes que jugaron recientemente (últimos 7 días)
-    @Query("SELECT pg FROM ProgresoJuego pg WHERE pg.ultimaJugada >= CURRENT_TIMESTAMP - INTERVAL '7 days'")
-    List<ProgresoJuego> findRecentlyPlayed();
+    // Estudiantes que jugaron recientemente (últimos 7 días) - CORREGIDO
+    @Query("SELECT pg FROM ProgresoJuego pg WHERE pg.ultimaJugada >= :fechaLimite")
+    List<ProgresoJuego> findRecentlyPlayed(@Param("fechaLimite") LocalDateTime fechaLimite);
 
     // Promedio de nivel por juego
     @Query("SELECT pg.juego.nombre, AVG(pg.nivelActual) " +

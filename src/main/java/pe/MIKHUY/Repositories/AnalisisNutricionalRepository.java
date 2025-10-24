@@ -60,9 +60,9 @@ public interface AnalisisNutricionalRepository extends JpaRepository<AnalisisNut
     // Contar análisis por estudiante
     long countByEstudianteId(UUID estudianteId);
 
-    // Análisis más recientes (últimos 30 días)
+    // Análisis más recientes (últimos 30 días) - CORREGIDO
     @Query("SELECT an FROM AnalisisNutricional an " +
-            "WHERE an.fechaAnalisis >= CURRENT_DATE - 30 " +
+            "WHERE an.fechaAnalisis >= :fechaLimite " +
             "ORDER BY an.fechaAnalisis DESC")
-    List<AnalisisNutricional> findRecentAnalisis();
+    List<AnalisisNutricional> findRecentAnalisis(@Param("fechaLimite") LocalDate fechaLimite);
 }
