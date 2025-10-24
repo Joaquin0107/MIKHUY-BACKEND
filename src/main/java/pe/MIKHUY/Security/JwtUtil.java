@@ -25,7 +25,7 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    // Generar clave secreta
+    // Generar clave secreta desde el string configurado
     private SecretKey getSigningKey() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
@@ -72,7 +72,7 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    // Generar token
+    // Generar token con información del usuario
     public String generateToken(UUID userId, String username, String rol) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId.toString());
@@ -80,7 +80,7 @@ public class JwtUtil {
         return createToken(claims, username);
     }
 
-    // Crear token con claims
+    // Crear token con claims personalizados
     private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -94,10 +94,14 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Validar token
+    // Validar token con UserDetails
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Validar token sin UserDetails
@@ -107,5 +111,11 @@ public class JwtUtil {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // Obtener tiempo restante del token (en milisegundos)
+    public Long getTimeUntilExpiration(String token) {
+        Date expiration = extractExpiration(token);
+        return expiration.getTime() - new Date().getTime();
     }
 }
