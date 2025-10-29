@@ -84,8 +84,9 @@ public class SecurityConfig {
                 // Reglas de autorización
                 .authorizeHttpRequests(auth -> auth
                         // ==================== RUTAS PÚBLICAS ====================
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()   // ✅ login/register públicos
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // ==================== RUTAS DE ESTUDIANTES ====================
                         .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student", "admin")
@@ -105,7 +106,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAuthority("admin")
                         .requestMatchers("/api/usuarios/**").hasAuthority("admin")
 
-                        // ==================== TODAS LAS DEMÁS RUTAS ====================
+                        // ==================== CUALQUIER OTRA RUTA ====================
                         .anyRequest().authenticated()
                 );
 

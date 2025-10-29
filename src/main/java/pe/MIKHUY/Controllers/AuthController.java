@@ -19,7 +19,7 @@ import pe.MIKHUY.Service.AuthService;
  * Endpoints: /api/auth/**
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "http://localhost:4200")
@@ -35,12 +35,8 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         try {
             log.info("Solicitud de login para: {}", request.getEmail());
-
             AuthResponse response = authService.login(request);
-
-            return ResponseEntity.ok(
-                    ApiResponse.success("Login exitoso", response)
-            );
+            return ResponseEntity.ok(ApiResponse.success("Login exitoso", response));
         } catch (Exception e) {
             log.error("Error en login: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -48,18 +44,11 @@ public class AuthController {
         }
     }
 
-    /**
-     * Registro de estudiante
-     * POST /api/auth/register/student
-     */
     @PostMapping("/register/student")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerStudent(
-            @Valid @RequestBody RegisterStudentRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> registerStudent(@Valid @RequestBody RegisterStudentRequest request) {
         try {
             log.info("Solicitud de registro para: {}", request.getEmail());
-
             AuthResponse response = authService.registerStudent(request);
-
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("Registro exitoso", response));
         } catch (IllegalArgumentException e) {

@@ -30,61 +30,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        try {
-            // Obtener el header Authorization
-            String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
 
-            // Verificar si el header existe y tiene el formato correcto
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                // Extraer el token (remover "Bearer ")
-                String token = authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String username = jwtUtil.extractUsername(token);
 
-                // Extraer el username del token
-                String username = jwtUtil.extractUsername(token);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                // Si hay username y no hay autenticación previa
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtUtil.validateToken(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                    // Cargar detalles del usuario
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                    // Validar el token
-                    if (jwtUtil.validateToken(token, userDetails)) {
-                        // Crear objeto de autenticación
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        userDetails,
-                                        null,
-                                        userDetails.getAuthorities()
-                                );
-
-                        // Establecer detalles adicionales
-                        authToken.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request)
-                        );
-
-                        // Establecer la autenticación en el contexto de seguridad
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
-
-                        log.debug("Usuario autenticado: {}", username);
-                    } else {
-                        log.warn("Token inválido para usuario: {}", username);
-                    }
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    log.debug("Usuario autenticado: {}", username);
+                } else {
+                    log.warn("Token inválido para usuario: {}", username);
                 }
             }
-        } catch (Exception e) {
-            log.error("No se pudo establecer la autenticación del usuario: {}", e.getMessage());
         }
 
-        // Continuar con la cadena de filtros
         filterChain.doFilter(request, response);
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        // No filtrar las rutas públicas
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/auth/") ||
-                path.startsWith("/api/public/");
+
+        // Ignorar rutas públicas
+        return path.equals("/api/auth/login") ||
+                path.startsWith("/api/auth/register") ||
+                path.startsWith("/swagger") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/api/public");
     }
 }
