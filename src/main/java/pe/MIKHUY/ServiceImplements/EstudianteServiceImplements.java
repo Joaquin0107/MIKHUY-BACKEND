@@ -41,6 +41,16 @@ public class EstudianteServiceImplements implements EstudianteService {
     }
 
     @Override
+    public Integer getPuntos(UUID estudianteId) {
+        log.info("Obteniendo puntos del estudiante: {}", estudianteId);
+
+        Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+        return estudiante.getPuntosAcumulados() != null ? estudiante.getPuntosAcumulados() : 0;
+    }
+
+    @Override
     public EstudianteResponse getById(UUID id) {
         log.info("Obteniendo estudiante por ID: {}", id);
 

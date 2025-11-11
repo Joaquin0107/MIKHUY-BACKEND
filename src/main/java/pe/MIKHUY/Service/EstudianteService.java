@@ -59,6 +59,11 @@ public interface EstudianteService {
     void agregarPuntos(UUID estudianteId, Integer puntos);
 
     /**
+     * Obtener puntos acumulados de un estudiante
+     */
+    Integer getPuntos(UUID estudianteId);
+
+    /**
      * Descontar puntos de un estudiante
      */
     boolean descontarPuntos(UUID estudianteId, Integer puntos);

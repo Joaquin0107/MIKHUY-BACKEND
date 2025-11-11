@@ -96,6 +96,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/beneficios/**").hasAnyAuthority("student", "teacher", "admin")
                         .requestMatchers("/api/canjes/**").hasAnyAuthority("student", "admin")
                         .requestMatchers("/api/notificaciones/**").authenticated()
+                        .requestMatchers("/api/estudiantes/puntos").hasAuthority("student")
 
                         // ==================== RUTAS DE PROFESORES ====================
                         .requestMatchers("/api/profesores/**").hasAnyAuthority("teacher", "admin")

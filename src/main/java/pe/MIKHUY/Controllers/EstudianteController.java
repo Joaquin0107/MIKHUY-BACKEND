@@ -76,6 +76,30 @@ public class EstudianteController {
     }
 
     /**
+     * Obtener mis puntos acumulados
+     * GET /api/estudiantes/puntos
+     */
+    @GetMapping("/puntos")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<Integer>> getMisPuntos(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            EstudianteResponse estudiante = estudianteService.getPerfilByUsuarioId(usuarioId);
+            Integer puntos = estudiante.getPuntosAcumulados() != null ?
+                    estudiante.getPuntosAcumulados() : 0;
+
+            return ResponseEntity.ok(
+                    ApiResponse.success("Puntos obtenidos correctamente", puntos)
+            );
+        } catch (Exception e) {
+            log.error("Error obteniendo puntos: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Error obteniendo puntos: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Obtener mis estadísticas
      * GET /api/estudiantes/estadisticas
      */
