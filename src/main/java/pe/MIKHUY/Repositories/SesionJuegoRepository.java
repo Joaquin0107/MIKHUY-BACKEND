@@ -41,4 +41,8 @@ public interface SesionJuegoRepository extends JpaRepository<SesionJuego, UUID> 
     // Tiempo total jugado por estudiante (en segundos)
     @Query("SELECT SUM(s.tiempoJugado) FROM SesionJuego s WHERE s.progreso.estudiante.id = :estudianteId")
     Integer getTiempoTotalByEstudiante(@Param("estudianteId") UUID estudianteId);
+
+    @Query("SELECT SUM(s.puntosObtenidos) FROM SesionJuego s WHERE s.progreso.estudiante.id = :estudianteId")
+    Integer getTotalPuntosByEstudiante(@Param("estudianteId") UUID estudianteId);
+
 }

@@ -49,4 +49,6 @@ public interface ProgresoJuegoRepository extends JpaRepository<ProgresoJuego, UU
             "FROM ProgresoJuego pg " +
             "GROUP BY pg.juego.nombre")
     List<Object[]> getPromedioNivelPorJuego();
+
+    List<ProgresoJuego> findByJuegoIdOrderByPuntosGanadosDesc(UUID juegoId);
 }

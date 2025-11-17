@@ -1,6 +1,7 @@
 package pe.MIKHUY.Service;
 
 import pe.MIKHUY.DTOs.response.JuegoResponse;
+import pe.MIKHUY.DTOs.response.RankingResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,4 +30,6 @@ public interface JuegoService {
      * Obtener juegos por categoría
      */
     List<JuegoResponse> getByCategoria(String categoria);
+
+    RankingResponse getRankingPorJuego(UUID juegoId, UUID estudianteId);
 }

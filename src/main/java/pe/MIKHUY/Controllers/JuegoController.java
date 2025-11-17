@@ -55,22 +55,12 @@ public class JuegoController {
      */
     @GetMapping("/mi-progreso")
     @PreAuthorize("hasAuthority('student')")
-    public ResponseEntity<ApiResponse<List<JuegoResponse>>> getMisJuegosConProgreso(
-            @RequestHeader("Authorization") String authHeader) {
-        try {
-            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
-            EstudianteResponse estudiante = estudianteService.getPerfilByUsuarioId(usuarioId);
+    public ResponseEntity<ApiResponse<List<JuegoResponse>>> getMiProgreso(@RequestHeader("Authorization") String authHeader) {
+        UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+        UUID estudianteId = estudianteService.getPerfilByUsuarioId(usuarioId).getId();
 
-            List<JuegoResponse> juegos = juegoService.getJuegosConProgreso(estudiante.getId());
-
-            return ResponseEntity.ok(
-                    ApiResponse.success("Juegos con progreso obtenidos", juegos)
-            );
-        } catch (Exception e) {
-            log.error("Error obteniendo juegos con progreso: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Error: " + e.getMessage()));
-        }
+        List<JuegoResponse> juegos = juegoService.getJuegosConProgreso(estudianteId);
+        return ResponseEntity.ok(ApiResponse.success("Juegos cargados", juegos));
     }
 
     /**
@@ -110,4 +100,5 @@ public class JuegoController {
                     .body(ApiResponse.error("Error: " + e.getMessage()));
         }
     }
+
 }
