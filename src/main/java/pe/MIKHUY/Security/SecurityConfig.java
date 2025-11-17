@@ -31,6 +31,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService customUserDetailsService;
 
     /**
      * Encoder de contraseñas con BCrypt
@@ -84,7 +85,7 @@ public class SecurityConfig {
                 // Reglas de autorización
                 .authorizeHttpRequests(auth -> auth
                         // ==================== RUTAS PÚBLICAS ====================
-                        .requestMatchers("/api/auth/**").permitAll()   // ✅ login/register públicos
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.MIKHUY.DTOs.request.ChangePasswordRequest;
 import pe.MIKHUY.DTOs.request.LoginRequest;
-import pe.MIKHUY.DTOs.request.RegisterStudentRequest;
 import pe.MIKHUY.DTOs.response.AuthResponse;
 import pe.MIKHUY.Entities.Estudiante;
 import pe.MIKHUY.Entities.Profesor;
@@ -74,55 +73,6 @@ public class AuthServiceImplements implements AuthService {
     }
 
     @Override
-    @Transactional
-    public AuthResponse registerStudent(RegisterStudentRequest request) {
-        log.info("Intento de registro para email: {}", request.getEmail());
-
-        // Verificar si el email ya existe
-        if (usuarioRepository.existsByEmail(request.getEmail().toLowerCase())) {
-            throw new IllegalArgumentException("El email ya está registrado");
-        }
-
-        // Crear usuario
-        Usuario usuario = new Usuario();
-        usuario.setEmail(request.getEmail().toLowerCase());
-        usuario.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        usuario.setRol(Usuario.RolEnum.student);
-        usuario.setNombres(request.getNombres());
-        usuario.setApellidos(request.getApellidos());
-        usuario.setTelefono(request.getTelefono());
-        usuario.setActivo(true);
-        usuario.setFechaCreacion(LocalDateTime.now());
-
-        usuario = usuarioRepository.save(usuario);
-
-        // Crear estudiante
-        Estudiante estudiante = new Estudiante();
-        estudiante.setUsuario(usuario);
-        estudiante.setEdad(request.getEdad());
-        estudiante.setGrado(request.getGrado());
-        estudiante.setSeccion(request.getSeccion());
-        estudiante.setTalla(request.getTalla());
-        estudiante.setPeso(request.getPeso());
-        estudiante.setPuntosAcumulados(0);
-        estudiante.setFechaRegistro(LocalDateTime.now());
-
-        estudianteRepository.save(estudiante);
-
-        // Generar token
-        String token = jwtUtil.generateToken(
-                usuario.getId(),
-                usuario.getEmail(),
-                usuario.getRol().name()
-        );
-
-        log.info("Registro exitoso para estudiante: {}", usuario.getEmail());
-
-        // Construir respuesta
-        return buildAuthResponse(token, usuario);
-    }
-
-    @Override
     public boolean verifyToken(String token) {
         return jwtUtil.validateToken(token);
     }
@@ -181,7 +131,7 @@ public class AuthServiceImplements implements AuthService {
         AuthResponse.UserInfo userInfo = AuthResponse.UserInfo.builder()
                 .id(usuario.getId())
                 .email(usuario.getEmail())
-                .rol(usuario.getRol().name())
+                .rol(usuario.getRol().name().toLowerCase())
                 .nombres(usuario.getNombres())
                 .apellidos(usuario.getApellidos())
                 .nombreCompleto(usuario.getNombreCompleto())
@@ -213,4 +163,5 @@ public class AuthServiceImplements implements AuthService {
                 .user(userInfo)
                 .build();
     }
+
 }

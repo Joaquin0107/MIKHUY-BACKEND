@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import pe.MIKHUY.DTOs.ApiResponse;
 import pe.MIKHUY.DTOs.request.ChangePasswordRequest;
 import pe.MIKHUY.DTOs.request.LoginRequest;
-import pe.MIKHUY.DTOs.request.RegisterStudentRequest;
 import pe.MIKHUY.DTOs.response.AuthResponse;
 import pe.MIKHUY.Security.CurrentUserUtil;
 import pe.MIKHUY.Service.AuthService;
@@ -41,24 +40,6 @@ public class AuthController {
             log.error("Error en login: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("Credenciales inválidas: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/register/student")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerStudent(@Valid @RequestBody RegisterStudentRequest request) {
-        try {
-            log.info("Solicitud de registro para: {}", request.getEmail());
-            AuthResponse response = authService.registerStudent(request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("Registro exitoso", response));
-        } catch (IllegalArgumentException e) {
-            log.error("Error en registro: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            log.error("Error en registro: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Error en el servidor: " + e.getMessage()));
         }
     }
 
