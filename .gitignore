@@ -4,6 +4,16 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Evitar exponer configuraciones locales
+application.properties
+application-local.properties
+application-dev.properties
+
+# Archivos que podrían contener claves
+*.env
+.env
+.env.*
+
 ### STS ###
 .apt_generated
 .classpath
