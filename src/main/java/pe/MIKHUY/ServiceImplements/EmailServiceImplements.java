@@ -1,13 +1,16 @@
 package pe.MIKHUY.ServiceImplements;
 
 import pe.MIKHUY.Service.EmailService;
+import jakarta.annotation.PostConstruct;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +24,7 @@ import java.time.format.DateTimeFormatter;
  * Esta clase contiene la lógica real para enviar correos
  */
 @Service
+@Slf4j
 public class EmailServiceImplements implements EmailService {
 
     @Autowired
@@ -28,6 +32,38 @@ public class EmailServiceImplements implements EmailService {
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+    @Value("${spring.mail.host:NOT_SET}")
+    private String mailHost;
+
+    @Value("${spring.mail.port:0}")
+    private int mailPort;
+
+    /**
+     * Verificar configuración al iniciar el servicio
+     */
+    @PostConstruct
+    public void init() {
+        log.info("========================================");
+        log.info("📧 CONFIGURACIÓN DE EMAIL SERVICE");
+        log.info("========================================");
+        log.info("📧 From Email: {}", fromEmail);
+        log.info("📧 Mail Host: {}", mailHost);
+        log.info("📧 Mail Port: {}", mailPort);
+
+        // Verificar si JavaMailSender está correctamente configurado
+        if (mailSender instanceof JavaMailSenderImpl) {
+            JavaMailSenderImpl impl = (JavaMailSenderImpl) mailSender;
+            log.info("📧 JavaMailSender Host: {}", impl.getHost());
+            log.info("📧 JavaMailSender Port: {}", impl.getPort());
+            log.info("📧 JavaMailSender Username: {}", impl.getUsername());
+            log.info("📧 JavaMailSender Properties: {}", impl.getJavaMailProperties());
+        } else {
+            log.warn("⚠️ JavaMailSender no es una instancia de JavaMailSenderImpl");
+        }
+
+        log.info("========================================");
+    }
 
     /**
      * Enviar email simple sin adjuntos
@@ -38,13 +74,32 @@ public class EmailServiceImplements implements EmailService {
      */
     @Override
     public void sendSimpleEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
+        try {
+            log.info("📧 ========== ENVIANDO EMAIL SIMPLE ==========");
+            log.info("📧 To: {}", to);
+            log.info("📧 From: {}", fromEmail);
+            log.info("📧 Subject: {}", subject);
+            log.info("📧 Message length: {}", text != null ? text.length() : 0);
 
-        mailSender.send(message);
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+
+            log.info("📧 Enviando mensaje...");
+            mailSender.send(message);
+            log.info("✅ Email enviado exitosamente");
+            log.info("============================================");
+
+        } catch (Exception e) {
+            log.error("❌ ========== ERROR AL ENVIAR EMAIL ==========");
+            log.error("❌ Error: {}", e.getMessage());
+            log.error("❌ Causa: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
+            log.error("❌ Stack trace:", e);
+            log.error("==============================================");
+            throw new RuntimeException("Error al enviar email: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -63,26 +118,48 @@ public class EmailServiceImplements implements EmailService {
                                         MultipartFile attachment, String profesorNombre)
             throws MessagingException, IOException {
 
-        // Crear mensaje MIME (permite HTML y adjuntos)
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        try {
+            log.info("📧 ========== ENVIANDO EMAIL CON PDF ==========");
+            log.info("📧 To: {}", to);
+            log.info("📧 From: {}", fromEmail);
+            log.info("📧 Subject: {}", subject);
+            log.info("📧 Attachment: {} ({} bytes)",
+                    attachment.getOriginalFilename(),
+                    attachment.getSize());
+            log.info("📧 Profesor: {}", profesorNombre);
 
-        // Configurar remitente y destinatario
-        helper.setFrom(fromEmail, "Plataforma MIKHUY");
-        helper.setTo(to);
-        helper.setSubject(subject);
+            // Crear mensaje MIME (permite HTML y adjuntos)
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        // Crear el cuerpo del email con HTML
-        String htmlContent = buildHtmlContent(text, profesorNombre);
-        helper.setText(htmlContent, true); // true = es HTML
+            // Configurar remitente y destinatario
+            helper.setFrom(fromEmail, "Plataforma MIKHUY");
+            helper.setTo(to);
+            helper.setSubject(subject);
 
-        // Adjuntar el PDF
-        String fileName = attachment.getOriginalFilename();
-        ByteArrayResource resource = new ByteArrayResource(attachment.getBytes());
-        helper.addAttachment(fileName, resource, "application/pdf");
+            // Crear el cuerpo del email con HTML
+            String htmlContent = buildHtmlContent(text, profesorNombre);
+            helper.setText(htmlContent, true); // true = es HTML
 
-        // Enviar el correo
-        mailSender.send(message);
+            // Adjuntar el PDF
+            String fileName = attachment.getOriginalFilename();
+            ByteArrayResource resource = new ByteArrayResource(attachment.getBytes());
+            helper.addAttachment(fileName, resource, "application/pdf");
+
+            log.info("📧 Enviando mensaje con adjunto...");
+            // Enviar el correo
+            mailSender.send(message);
+            log.info("✅ Email con PDF enviado exitosamente");
+            log.info("===============================================");
+
+        } catch (Exception e) {
+            log.error("❌ ========== ERROR AL ENVIAR EMAIL CON PDF ==========");
+            log.error("❌ Error: {}", e.getMessage());
+            log.error("❌ Causa: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
+            log.error("❌ Stack trace:", e);
+            log.error("======================================================");
+            throw new RuntimeException("Error al enviar email con PDF: " + e.getMessage(), e);
+        }
     }
 
     /**
