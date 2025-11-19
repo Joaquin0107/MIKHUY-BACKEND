@@ -56,20 +56,30 @@ public class EstudianteController {
      * Actualizar mi perfil
      * PUT /api/estudiantes/perfil
      */
-    @PutMapping("/perfil")
+    @GetMapping("/perfil")
     @PreAuthorize("hasAuthority('student')")
     public ResponseEntity<ApiResponse<EstudianteResponse>> updateMiPerfil(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody UpdateProfileRequest request) {
         try {
+            log.info("📝 Solicitud de actualización de perfil recibida");
+            log.info("🔐 Authorization header: {}",
+                    authHeader != null ? authHeader.substring(0, 30) + "..." : "NULL");
+            log.info("📦 Datos recibidos: nombres={}, apellidos={}, email={}",
+                    request.getNombres(), request.getApellidos(), request.getEmail());
+
             UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            log.info("🆔 Usuario ID extraído: {}", usuarioId);
+
             EstudianteResponse estudiante = estudianteService.updatePerfil(usuarioId, request);
+
+            log.info("✅ Perfil actualizado exitosamente para usuario: {}", usuarioId);
 
             return ResponseEntity.ok(
                     ApiResponse.success("Perfil actualizado", estudiante)
             );
         } catch (Exception e) {
-            log.error("Error actualizando perfil: {}", e.getMessage());
+            log.error("❌ Error actualizando perfil: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error actualizando perfil: " + e.getMessage()));
         }

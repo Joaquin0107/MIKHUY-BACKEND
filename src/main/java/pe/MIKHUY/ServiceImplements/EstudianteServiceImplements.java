@@ -90,43 +90,50 @@ public class EstudianteServiceImplements implements EstudianteService {
     @Override
     @Transactional
     public EstudianteResponse updatePerfil(UUID usuarioId, UpdateProfileRequest request) {
-        log.info("Actualizando perfil del estudiante usuario ID: {}", usuarioId);
+        log.info("Actualizando perfil del usuario: {}", usuarioId);
 
-        // Buscar usuario y estudiante
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
+        // Buscar estudiante por usuario ID
         Estudiante estudiante = estudianteRepository.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
 
-        // Actualizar datos del usuario
-        usuario.setNombres(request.getNombres());
-        usuario.setApellidos(request.getApellidos());
-        usuario.setTelefono(request.getTelefono());
-        if (request.getAvatarUrl() != null) {
-            usuario.setAvatarUrl(request.getAvatarUrl());
-        }
-        usuarioRepository.save(usuario);
-
         // Actualizar datos del estudiante
-        if (request.getEdad() != null) {
-            estudiante.setEdad(request.getEdad());
-        }
         if (request.getGrado() != null) {
             estudiante.setGrado(request.getGrado());
         }
         if (request.getSeccion() != null) {
             estudiante.setSeccion(request.getSeccion());
         }
-        if (request.getTalla() != null) {
-            estudiante.setTalla(request.getTalla());
+        if (request.getEdad() != null) {
+            estudiante.setEdad(request.getEdad());
         }
         if (request.getPeso() != null) {
             estudiante.setPeso(request.getPeso());
         }
+        if (request.getTalla() != null) {
+            estudiante.setTalla(request.getTalla());
+        }
+
+        // Actualizar datos del usuario asociado
+        Usuario usuario = estudiante.getUsuario();
+
+        if (request.getNombres() != null) {
+            usuario.setNombres(request.getNombres());
+        }
+        if (request.getApellidos() != null) {
+            usuario.setApellidos(request.getApellidos());
+        }
+        if (request.getTelefono() != null) {
+            usuario.setTelefono(request.getTelefono());
+        }
+        if (request.getAvatarUrl() != null) {
+            usuario.setAvatarUrl(request.getAvatarUrl());
+        }
+
+        // Guardar cambios
+        usuarioRepository.save(usuario);
         estudianteRepository.save(estudiante);
 
-        log.info("Perfil actualizado exitosamente para estudiante: {}", estudiante.getId());
+        log.info("Perfil actualizado exitosamente para usuario: {}", usuario.getEmail());
 
         return mapToResponse(estudiante);
     }

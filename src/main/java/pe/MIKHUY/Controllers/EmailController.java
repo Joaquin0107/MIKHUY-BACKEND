@@ -1,6 +1,6 @@
-package com.mikhuy.controller;
+package pe.MIKHUY.Controllers;
 
-import com.mikhuy.service.EmailService;
+import pe.MIKHUY.Service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ import java.util.Map;
 public class EmailController {
 
     @Autowired
-    private EmailService emailService;
+    private EmailService emailService; // ✅ Usa la interfaz
 
     /**
      * Enviar email simple
@@ -56,10 +56,19 @@ public class EmailController {
             @RequestParam("pdf") MultipartFile pdfFile) {
         try {
             // Validar que el archivo sea PDF
-            if (!pdfFile.getContentType().equals("application/pdf")) {
+            if (pdfFile.getContentType() == null ||
+                    !pdfFile.getContentType().equals("application/pdf")) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
                 response.put("message", "El archivo debe ser un PDF");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validar que el archivo no esté vacío
+            if (pdfFile.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "El archivo PDF está vacío");
                 return ResponseEntity.badRequest().body(response);
             }
 
