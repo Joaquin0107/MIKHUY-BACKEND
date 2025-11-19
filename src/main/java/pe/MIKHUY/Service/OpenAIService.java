@@ -49,25 +49,37 @@ public class OpenAIService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
+                .doOnNext(res -> {
+                    System.out.println("===== RAW RESPONSE FROM OPENAI =====");
+                    System.out.println(res.toPrettyString());
+                })
                 .map(response -> {
                     try {
-                        // Nuevo formato oficial del endpoint /responses
-                        JsonNode outputArray = response.get("output_text");
 
-                        if (outputArray != null && outputArray.isArray() && outputArray.size() > 0) {
-                            return outputArray.get(0).asText();
+                        JsonNode outputArray = response.path("output");
+
+                        if (outputArray.isArray() && outputArray.size() > 0) {
+
+                            JsonNode contentArray = outputArray.get(0).path("content");
+
+                            if (contentArray.isArray() && contentArray.size() > 0) {
+
+                                JsonNode textNode = contentArray.get(0).path("text");
+
+                                if (!textNode.isMissingNode()) {
+                                    return textNode.asText();
+                                }
+                            }
                         }
 
                         return "No se pudo leer la respuesta del modelo.";
+
                     } catch (Exception e) {
                         e.printStackTrace();
                         return "Error al procesar la respuesta de OpenAI.";
                     }
                 })
-                .onErrorResume(error -> {
-                    System.err.println("Error OpenAI /responses: " + error.getMessage());
-                    return Mono.just("Hubo un problema al consultar la IA. Intenta más tarde.");
-                });
+                ;
     }
 
 }
