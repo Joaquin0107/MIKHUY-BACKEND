@@ -116,14 +116,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // ✅ Orígenes permitidos (NO usar "*" con allowCredentials)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:4200",
-                "http://localhost:4201",
-                "http://127.0.0.1:4200",
-                "https://mikhuy-front.web.app",          // ✔️ Firebase Hosting
-                "https://mikhuy-front.firebaseapp.com",  // ✔️ Firebase alternativa
-
-                "https://mikhuy-backend.onrender.com"   // ✔️ Render (para pruebas internas)
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "https://mikhuy-front.web.app",
+                "https://mikhuy-front.firebaseapp.com"
         ));
 
         // ✅ Métodos HTTP permitidos
