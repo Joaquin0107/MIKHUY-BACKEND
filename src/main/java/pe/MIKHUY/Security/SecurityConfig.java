@@ -120,7 +120,10 @@ public class SecurityConfig {
                 "http://localhost:4200",
                 "http://localhost:4201",
                 "http://127.0.0.1:4200",
-                "https://mikhuy-frontend.com"
+                "https://mikhuy-front.web.app",          // ✔️ Firebase Hosting
+                "https://mikhuy-front.firebaseapp.com",  // ✔️ Firebase alternativa
+
+                "https://mikhuy-backend.onrender.com"   // ✔️ Render (para pruebas internas)
         ));
 
         // ✅ Métodos HTTP permitidos
