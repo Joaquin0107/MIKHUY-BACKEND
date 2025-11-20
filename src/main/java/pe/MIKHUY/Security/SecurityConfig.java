@@ -83,6 +83,7 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()  // <-- Health
                         .requestMatchers("/").permitAll()        // <-- Raíz pública
                         // Email - requiere autenticación
+                        .requestMatchers("/api/email/send-with-pdf").permitAll()
                         .requestMatchers("/api/email/**").authenticated()
                         // Resto de rutas según roles
                         .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student", "admin")
