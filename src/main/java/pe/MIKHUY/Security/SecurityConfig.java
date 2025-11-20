@@ -80,10 +80,11 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
                         .requestMatchers("/api/chatbot/consulta").permitAll()
+                        .requestMatchers("/health").permitAll()  // <-- Health
+                        .requestMatchers("/").permitAll()        // <-- Raíz pública
                         // Email - requiere autenticación
                         .requestMatchers("/api/email/**").authenticated()
-
-                        // Estudiantes
+                        // Resto de rutas según roles
                         .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student", "admin")
                         .requestMatchers("/api/juegos/**").hasAnyAuthority("student", "teacher", "admin")
                         .requestMatchers("/api/progreso/**").hasAnyAuthority("student", "admin")
@@ -92,19 +93,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/canjes/**").hasAnyAuthority("student", "admin")
                         .requestMatchers("/api/notificaciones/**").authenticated()
                         .requestMatchers("/api/estudiantes/puntos").hasAuthority("student")
-
-                        // Profesores
                         .requestMatchers("/api/profesores/**").hasAnyAuthority("teacher", "admin")
                         .requestMatchers("/api/reportes/**").hasAnyAuthority("teacher", "admin")
                         .requestMatchers("/api/analisis/**").hasAnyAuthority("teacher", "admin")
-
-                        // Admin
                         .requestMatchers("/api/admin/**").hasAuthority("admin")
                         .requestMatchers("/api/usuarios/**").hasAuthority("admin")
-
-
-
-                        // Cualquier otra ruta
+                        // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 );
 
