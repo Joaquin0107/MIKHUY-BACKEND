@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/chatbot")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {"http://localhost:4200", "https://mikhuy-front.web.app"})
 public class ChatbotController {
 
     private final OpenAIService openAIService;
@@ -44,17 +44,16 @@ public class ChatbotController {
                     Map<String, Object> responseMap = new HashMap<>();
                     responseMap.put("respuesta", respuesta);
                     responseMap.put("timestamp", System.currentTimeMillis());
-                    responseMap.put("modelo", "gpt-5.1"); // nuevo modelo
+                    responseMap.put("modelo", "gpt-4o-mini"); // ✅ Modelo real
                     return ResponseEntity.ok(responseMap);
                 })
                 .onErrorResume(error -> {
-                    error.printStackTrace(); // 🔹 Esto te mostrará la causa real en los logs de Render
+                    error.printStackTrace();
                     Map<String, Object> errorMap = new HashMap<>();
                     errorMap.put("error", "Error al procesar la consulta");
                     errorMap.put("mensaje", error.getMessage());
                     return Mono.just(ResponseEntity.internalServerError().body(errorMap));
                 });
-
     }
 
     @GetMapping("/health")
@@ -62,7 +61,7 @@ public class ChatbotController {
         return ResponseEntity.ok(Map.of(
                 "status", "OK",
                 "service", "Chatbot API",
-                "model", "gpt-5.1"
+                "model", "gpt-4o-mini"
         ));
     }
 
@@ -70,20 +69,29 @@ public class ChatbotController {
     public ResponseEntity<Map<String, Object>> obtenerModelosDisponibles() {
 
         Map<String, Object> modelos = new HashMap<>();
-        modelos.put("modelo_actual", "gpt-5.1");
+        modelos.put("modelo_actual", "gpt-4o-mini");
 
         modelos.put("modelos_disponibles", List.of(
                 Map.of(
-                        "id", "gpt-5.1",
-                        "nombre", "GPT-5.1",
+                        "id", "gpt-4o-mini",
+                        "nombre", "GPT-4o Mini",
                         "velocidad", "Alta",
-                        "costo", "Eficiente"
+                        "costo", "Muy económico",
+                        "descripcion", "Ideal para chatbots y respuestas rápidas"
                 ),
                 Map.of(
-                        "id", "gpt-5.1-mini",
-                        "nombre", "GPT-5.1 Mini",
+                        "id", "gpt-4o",
+                        "nombre", "GPT-4o",
+                        "velocidad", "Media",
+                        "costo", "Moderado",
+                        "descripcion", "Más potente, para tareas complejas"
+                ),
+                Map.of(
+                        "id", "gpt-3.5-turbo",
+                        "nombre", "GPT-3.5 Turbo",
                         "velocidad", "Muy alta",
-                        "costo", "Muy bajo"
+                        "costo", "Bajo",
+                        "descripcion", "Rápido y económico"
                 )
         ));
 
