@@ -79,9 +79,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
+                        .requestMatchers("/api/chatbot/**").permitAll() //
                         .requestMatchers("/api/chatbot/consulta").permitAll()
-                        .requestMatchers("/health").permitAll()  // <-- Health
-                        .requestMatchers("/").permitAll()        // <-- Raíz pública
+                        .requestMatchers("/health").permitAll()
+                        .requestMatchers("/").permitAll()
                         // Email - requiere autenticación
                         .requestMatchers("/api/email/send-with-pdf").permitAll()
                         .requestMatchers("/api/email/**").authenticated()
