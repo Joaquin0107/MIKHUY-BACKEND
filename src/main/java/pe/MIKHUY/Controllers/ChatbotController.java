@@ -48,11 +48,13 @@ public class ChatbotController {
                     return ResponseEntity.ok(responseMap);
                 })
                 .onErrorResume(error -> {
+                    error.printStackTrace(); // 🔹 Esto te mostrará la causa real en los logs de Render
                     Map<String, Object> errorMap = new HashMap<>();
                     errorMap.put("error", "Error al procesar la consulta");
                     errorMap.put("mensaje", error.getMessage());
                     return Mono.just(ResponseEntity.internalServerError().body(errorMap));
                 });
+
     }
 
     @GetMapping("/health")
