@@ -1,5 +1,6 @@
 package pe.MIKHUY.Security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,17 +33,11 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // ===========================
-    // Password Encoder
-    // ===========================
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ===========================
-    // Authentication Provider
-    // ===========================
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -51,56 +46,43 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // ===========================
-    // Authentication Manager
-    // ===========================
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // ===========================
-    // Security Filter Chain
-    // ===========================
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("Unauthorized");
+                        })
                 )
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Rutas públicas
+                        // 🔹 Endpoints públicos
+                        .requestMatchers("/api/chatbot/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
-                        .requestMatchers("/api/chatbot/**").permitAll() //
-                        .requestMatchers("/api/chatbot/consulta").permitAll()
-                        .requestMatchers("/health").permitAll()
-                        .requestMatchers("/").permitAll()
-                        // Email - requiere autenticación
-                        .requestMatchers("/api/email/send-with-pdf").permitAll()
-                        .requestMatchers("/api/email/**").authenticated()
-                        // Resto de rutas según roles
-                        .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student", "admin")
-                        .requestMatchers("/api/juegos/**").hasAnyAuthority("student", "teacher", "admin")
-                        .requestMatchers("/api/progreso/**").hasAnyAuthority("student", "admin")
-                        .requestMatchers("/api/sesiones/**").hasAnyAuthority("student", "admin")
-                        .requestMatchers("/api/beneficios/**").hasAnyAuthority("student", "teacher", "admin")
-                        .requestMatchers("/api/canjes/**").hasAnyAuthority("student", "admin")
+                        // 🔹 Endpoints con roles
+                        .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student","admin")
+                        .requestMatchers("/api/juegos/**").hasAnyAuthority("student","teacher","admin")
+                        .requestMatchers("/api/progreso/**").hasAnyAuthority("student","admin")
+                        .requestMatchers("/api/sesiones/**").hasAnyAuthority("student","admin")
+                        .requestMatchers("/api/beneficios/**").hasAnyAuthority("student","teacher","admin")
+                        .requestMatchers("/api/canjes/**").hasAnyAuthority("student","admin")
                         .requestMatchers("/api/notificaciones/**").authenticated()
-                        .requestMatchers("/api/estudiantes/puntos").hasAuthority("student")
-                        .requestMatchers("/api/profesores/**").hasAnyAuthority("teacher", "admin")
-                        .requestMatchers("/api/reportes/**").hasAnyAuthority("teacher", "admin")
-                        .requestMatchers("/api/analisis/**").hasAnyAuthority("teacher", "admin")
+                        .requestMatchers("/api/profesores/**").hasAnyAuthority("teacher","admin")
+                        .requestMatchers("/api/reportes/**").hasAnyAuthority("teacher","admin")
+                        .requestMatchers("/api/analisis/**").hasAnyAuthority("teacher","admin")
                         .requestMatchers("/api/admin/**").hasAuthority("admin")
                         .requestMatchers("/api/usuarios/**").hasAuthority("admin")
-                        // Cualquier otra ruta requiere autenticación
+                        // 🔹 Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 );
 
@@ -110,50 +92,22 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ===========================
-    // CORS Configuration - ✅ ÚNICA Y CORRECTA
-    // ===========================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // ✅ Orígenes permitidos (NO usar "*" con allowCredentials)
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:*",
                 "https://mikhuy-front.web.app",
                 "https://mikhuy-front.firebaseapp.com"
         ));
-
-        // ✅ Métodos HTTP permitidos
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
-        ));
-
-        // ✅ Headers permitidos
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With",
-                "X-Total-Count"
-        ));
-
-        // ✅ Headers expuestos (visibles para el frontend)
-        configuration.setExposedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Total-Count"
-        ));
-
-        // ✅ Permitir credenciales (cookies, headers de auth)
+        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
+        configuration.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","X-Requested-With","X-Total-Count"));
+        configuration.setExposedHeaders(List.of("Authorization","Content-Type","X-Total-Count"));
         configuration.setAllowCredentials(true);
-
-        // ✅ Cache de configuración CORS
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 }
