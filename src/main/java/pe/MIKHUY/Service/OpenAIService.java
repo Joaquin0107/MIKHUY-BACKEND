@@ -26,25 +26,29 @@ public class OpenAIService {
 
     /**
      * Método principal: solo responde sobre nutrición.
+     * Usa el endpoint estándar /v1/chat/completions que funciona con cualquier API key
      */
     public Mono<String> consultarNutricion(String preguntaUsuario) {
 
         // Prompt nutricional
-        String prompt =
+        String systemPrompt =
                 "Eres un asistente experto en nutrición, dietas y alimentación saludable. " +
                         "Responde SIEMPRE basado en evidencia científica, con un tono claro y profesional. " +
-                        "Si la pregunta no es sobre nutrición, responde: 'Solo puedo responder temas de nutrición'.\n\n" +
-                        "Pregunta: " + preguntaUsuario;
+                        "Si la pregunta no es sobre nutrición, responde: 'Solo puedo responder temas de nutrición'.";
 
-        // Request body CORRECTO para /v1/responses con GPT-5.1
+        // Request body para /v1/chat/completions (endpoint UNIVERSAL)
         Map<String, Object> requestBody = Map.of(
-                "model", "gpt-5.1",
-                "input", prompt,
-                "reasoning_effort", "none" // Para respuestas rápidas sin razonamiento profundo
+                "model", "gpt-4o-mini", // Modelo que SÍ funciona con todas las API keys
+                "messages", List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", preguntaUsuario)
+                ),
+                "max_tokens", 800,
+                "temperature", 0.7
         );
 
         return webClient.post()
-                .uri("https://api.openai.com/v1/responses")
+                .uri("https://api.openai.com/v1/chat/completions")
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .bodyValue(requestBody)
@@ -53,56 +57,52 @@ public class OpenAIService {
                         status -> status.is4xxClientError() || status.is5xxServerError(),
                         response -> response.bodyToMono(String.class)
                                 .flatMap(errorBody -> {
-                                    System.err.println("Error de OpenAI: " + errorBody);
+                                    System.err.println("❌ Error de OpenAI: " + errorBody);
                                     return Mono.error(new RuntimeException("Error de OpenAI: " + errorBody));
                                 })
                 )
                 .bodyToMono(JsonNode.class)
                 .doOnNext(res -> {
-                    System.out.println("===== RAW RESPONSE FROM OPENAI =====");
+                    System.out.println("✅ RAW RESPONSE FROM OPENAI:");
                     System.out.println(res.toPrettyString());
                 })
                 .map(response -> {
                     try {
-                        // Para /v1/responses, la estructura es: output -> [array] -> content
-                        JsonNode output = response.path("output");
+                        // Estructura: choices[0].message.content
+                        JsonNode choices = response.path("choices");
 
-                        if (output.isArray() && output.size() > 0) {
-                            JsonNode firstOutput = output.get(0);
+                        if (choices.isArray() && choices.size() > 0) {
+                            JsonNode message = choices.get(0).path("message");
+                            JsonNode content = message.path("content");
 
-                            // Puede ser texto directo o dentro de "content"
-                            if (firstOutput.has("text")) {
-                                return firstOutput.path("text").asText();
-                            } else if (firstOutput.has("content")) {
-                                JsonNode content = firstOutput.path("content");
-                                if (content.isArray() && content.size() > 0) {
-                                    return content.get(0).path("text").asText();
-                                } else if (content.isTextual()) {
-                                    return content.asText();
-                                }
-                            } else if (firstOutput.isTextual()) {
-                                return firstOutput.asText();
+                            if (!content.isMissingNode() && !content.isNull()) {
+                                return content.asText();
                             }
                         }
 
-                        // Si no tiene "output", puede tener "output_text" directamente
-                        if (response.has("output_text")) {
-                            return response.path("output_text").asText();
-                        }
-
-                        return "No se pudo leer la respuesta del modelo.";
+                        System.err.println("⚠️ Respuesta inesperada de OpenAI");
+                        return "No se pudo obtener una respuesta válida del modelo.";
 
                     } catch (Exception e) {
-                        System.err.println("Error procesando respuesta:");
+                        System.err.println("❌ Error procesando respuesta:");
                         e.printStackTrace();
                         return "Error al procesar la respuesta de OpenAI.";
                     }
                 })
                 .onErrorResume(error -> {
-                    System.err.println("Error llamando a OpenAI: " + error.getMessage());
+                    System.err.println("❌ Error completo: " + error.getMessage());
                     error.printStackTrace();
-                    return Mono.just("Error: No se pudo conectar con el servicio de IA. " +
-                            "Verifica tu API key y que tienes acceso al modelo GPT-5.1");
+
+                    String mensaje = error.getMessage();
+                    if (mensaje != null && mensaje.contains("401")) {
+                        return Mono.just("Error: API key inválida o expirada.");
+                    } else if (mensaje != null && mensaje.contains("429")) {
+                        return Mono.just("Error: Límite de requests alcanzado. Intenta más tarde.");
+                    } else if (mensaje != null && mensaje.contains("insufficient_quota")) {
+                        return Mono.just("Error: Tu cuenta de OpenAI no tiene créditos disponibles.");
+                    }
+
+                    return Mono.just("Error al conectar con OpenAI. Verifica tu configuración.");
                 });
     }
 }

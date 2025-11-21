@@ -44,7 +44,7 @@ public class ChatbotController {
                     Map<String, Object> responseMap = new HashMap<>();
                     responseMap.put("respuesta", respuesta);
                     responseMap.put("timestamp", System.currentTimeMillis());
-                    responseMap.put("modelo", "gpt-4o-mini"); // ✅ Modelo real
+                    responseMap.put("modelo", "gpt-4o-mini");
                     return ResponseEntity.ok(responseMap);
                 })
                 .onErrorResume(error -> {
