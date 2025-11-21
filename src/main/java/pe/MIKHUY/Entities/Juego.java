@@ -30,6 +30,9 @@ public class Juego {
     @Column(name = "categoria", nullable = false, length = 50)
     private String categoria;
 
+    @Column(name = "imagen", length = 255)
+    private String imagen;
+
     @Column(name = "max_niveles")
     private Integer maxNiveles = 10;
 

@@ -25,6 +25,7 @@ public class JuegoResponse {
     private Integer puntosMaximos;
     private Boolean activo;
     private LocalDateTime fechaCreacion;
+    private String imagen;
 
     // Datos de progreso del estudiante (opcional)
     private UUID progresoId;
