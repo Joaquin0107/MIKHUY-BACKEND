@@ -70,7 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
                         // 🔹 Endpoints con roles
-                        .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student","admin")
+                        .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student","admin", "teacher")
                         .requestMatchers("/api/juegos/**").hasAnyAuthority("student","teacher","admin")
                         .requestMatchers("/api/progreso/**").hasAnyAuthority("student","admin")
                         .requestMatchers("/api/sesiones/**").hasAnyAuthority("student","admin")
