@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -31,35 +33,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 🔹 Ignorar rutas públicas primero
+        // 🔹 Ignorar rutas públicas
         if (path.startsWith("/api/chatbot") ||
                 path.startsWith("/api/auth") ||
-                path.startsWith("/api/auth/login") ||
                 path.startsWith("/swagger") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/api/public")) {
-
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 🔹 Procesar JWT solo para rutas protegidas
+        // 🔹 Procesar JWT
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            String username = jwtUtil.extractUsername(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (jwtUtil.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("Usuario autenticado: {}", username);
-                } else {
-                    log.warn("Token inválido para usuario: {}", username);
+            try {
+                String username = jwtUtil.extractUsername(token);
+
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                    if (jwtUtil.validateToken(token, userDetails)) {
+                        // ✅ CAMBIO CLAVE: Extraer rol del TOKEN, no del UserDetails
+                        String rol = jwtUtil.extractRole(token);
+                        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(rol));
+
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                        log.info("✅ Usuario autenticado: {} con rol: {}", username, rol);
+                    } else {
+                        log.warn("❌ Token inválido para usuario: {}", username);
+                    }
                 }
+            } catch (Exception e) {
+                log.error("❌ Error procesando token: {}", e.getMessage());
             }
         }
 
