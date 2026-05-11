@@ -21,7 +21,6 @@ public class UpdateProfileRequest {
     private String apellidos;
 
     // ✅ AGREGAR: Campo email
-    @NotBlank(message = "El email es obligatorio")
     @Email(message = "Email inválido")
     @Size(max = 100, message = "El email no puede exceder 100 caracteres")
     private String email;
