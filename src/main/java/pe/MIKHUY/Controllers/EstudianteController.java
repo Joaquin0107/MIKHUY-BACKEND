@@ -43,9 +43,8 @@ public class EstudianteController {
         }
     }
 
-    @PutMapping("/perfil")
-    //@PreAuthorize("hasAuthority('student')")
-    public ResponseEntity<ApiResponse<EstudianteResponse>> updateMiPerfil(
+    @PatchMapping("/perfil")
+    public ResponseEntity<ApiResponse<EstudianteResponse>> patchMiPerfil(
             @RequestHeader("Authorization") String authHeader,
             @Valid @RequestBody UpdateProfileRequest request) {
         try {
