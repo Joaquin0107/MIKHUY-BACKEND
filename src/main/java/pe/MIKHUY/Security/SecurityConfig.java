@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/estudiantes/perfil").authenticated() // ← AGREGAR ESTA LÍNEA
+
                         // 🔹 Endpoints con roles
                         .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student","admin", "teacher")
                         .requestMatchers("/api/juegos/**").hasAnyAuthority("student","teacher","admin")
