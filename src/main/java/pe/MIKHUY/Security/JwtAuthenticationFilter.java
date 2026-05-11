@@ -55,9 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                     if (jwtUtil.validateToken(token, userDetails)) {
-                        // ✅ CAMBIO CLAVE: Extraer rol del TOKEN, no del UserDetails
                         String rol = jwtUtil.extractRole(token);
                         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(rol));
+
+                        log.info("🔐 Método HTTP: {}", request.getMethod());
+                        log.info("🔐 URI: {}", request.getRequestURI());
+                        log.info("🔐 Rol extraído: {}", rol);
+                        log.info("🔐 Authorities: {}", authorities);
 
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
