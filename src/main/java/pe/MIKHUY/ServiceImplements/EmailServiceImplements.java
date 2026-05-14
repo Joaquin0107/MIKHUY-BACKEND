@@ -207,7 +207,7 @@ public class EmailServiceImplements implements EmailService {
                 "<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #999; font-size: 12px;'>" +
                 "<p style='margin: 5px 0;'>Este es un correo automático generado por la Plataforma MIKHUY</p>" +
                 "<p style='margin: 5px 0;'>Para consultas adicionales, contacte directamente con su profesor(a)</p>" +
-                "<p style='margin: 5px 0;'><strong>© 2025 MIKHUY</strong> - Todos los derechos reservados</p>" +
+                "<p style='margin: 5px 0;'><strong>© 2026 MIKHUY</strong> - Todos los derechos reservados</p>" +
                 "</div>" +
 
                 "</div>" +
