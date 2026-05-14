@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 🔹 Endpoints públicos
+                        .requestMatchers("/").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/chatbot/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
