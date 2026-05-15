@@ -46,8 +46,7 @@ public class CorreoEnviado {
     @PrePersist
     protected void onCreate() {
         if (fechaEnvio == null) {
-            java.time.ZoneId zonaPeru = java.time.ZoneId.of("America/Lima");
-            fechaEnvio = LocalDateTime.now(zonaPeru);
+            fechaEnvio = LocalDateTime.now();
         }
         if (estado == null) {
             estado = EstadoCorreoEnum.enviado;
