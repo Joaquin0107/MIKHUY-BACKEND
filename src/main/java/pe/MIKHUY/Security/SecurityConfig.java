@@ -66,6 +66,7 @@ public class SecurityConfig {
                         // 🔹 Endpoints públicos
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/health").permitAll()
+                        .requestMatchers("/api/status").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/chatbot/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()

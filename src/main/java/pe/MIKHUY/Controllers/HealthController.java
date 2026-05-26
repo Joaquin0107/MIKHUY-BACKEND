@@ -22,4 +22,11 @@ public class HealthController {
         response.put("message", "Backend MIKHUY está vivo!");
         return response;
     }
+
+    @GetMapping("/api/status")
+    public Map<String, String> status() {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "OK");
+        return response;
+    }
 }
