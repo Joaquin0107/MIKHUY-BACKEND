@@ -107,9 +107,10 @@ public class EmailController {
             return ResponseEntity.ok(createSuccessResponse("Correo con PDF enviado exitosamente"));
 
         } catch (Exception e) {
-            log.error("❌ Error al enviar email con PDF: {}", e.getMessage(), e);
+            log.error("❌ Error al enviar email: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("Error al enviar el correo: " + e.getMessage()));
+                    .body(createErrorResponse("Error: " + e.getMessage() +
+                            " | Causa: " + (e.getCause() != null ? e.getCause().getMessage() : "sin causa")));
         }
     }
 
