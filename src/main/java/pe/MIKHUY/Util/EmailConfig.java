@@ -39,32 +39,30 @@ public class EmailConfig {
 
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
 
-        // ✅ Configuración del servidor SMTP
         mailSender.setHost(mailHost);
-        mailSender.setPort(mailPort);
+        mailSender.setPort(465); // Puerto SSL directo
         mailSender.setUsername(mailUsername);
         mailSender.setPassword(mailPassword);
 
         log.info("✅ Host: {}", mailHost);
-        log.info("✅ Port: {}", mailPort);
+        log.info("✅ Port: 465 (SSL)");
         log.info("✅ Username: {}", mailUsername);
         log.info("✅ Password configurada ****");
 
-        // ✅ Propiedades SMTP
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.starttls.required", "true");
+        props.put("mail.smtp.ssl.enable", "true");
         props.put("mail.smtp.ssl.trust", mailHost);
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        props.put("mail.smtp.starttls.enable", "false");
+        props.put("mail.smtp.starttls.required", "false");
         props.put("mail.debug", "true");
-        props.put("mail.smtp.connectiontimeout", "5000");
-        props.put("mail.smtp.timeout", "5000");
-        props.put("mail.smtp.writetimeout", "5000");
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
 
-        log.info("✅ Propiedades SMTP configuradas");
-        log.info("✅ STARTTLS: habilitado");
+        log.info("✅ SSL habilitado en puerto 465");
         log.info("✅ Autenticación: habilitada");
         log.info("========================================");
 
