@@ -29,7 +29,7 @@ public class EmailServiceImplements implements EmailService {
     @PostConstruct
     public void init() {
         log.info("========================================");
-        log.info("📧 EMAIL SERVICE - JavaMail (Gmail SMTP)");
+        log.info("📧 EMAIL SERVICE - BREVO SMTP");
         log.info("📧 From: {}", fromEmail);
         log.info("========================================");
     }

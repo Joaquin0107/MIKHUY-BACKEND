@@ -40,7 +40,7 @@ public class EmailConfig {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
 
         mailSender.setHost(mailHost);
-        mailSender.setPort(465); // Puerto SSL directo
+        mailSender.setPort(587);
         mailSender.setUsername(mailUsername);
         mailSender.setPassword(mailPassword);
 
