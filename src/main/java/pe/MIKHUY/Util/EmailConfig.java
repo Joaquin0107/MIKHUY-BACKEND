@@ -22,10 +22,10 @@ public class EmailConfig {
     @Value("${spring.mail.port:587}")
     private Integer mailPort;
 
-    @Value("${spring.mail.username:profesor.mikhuy@gmail.com}")
+    @Value("${spring.mail.username}")
     private String mailUsername;
 
-    @Value("${spring.mail.password:qgzihifxfexjqphv}")
+    @Value("${spring.mail.password}")
     private String mailPassword;
 
     /**
@@ -48,7 +48,7 @@ public class EmailConfig {
         log.info("✅ Host: {}", mailHost);
         log.info("✅ Port: {}", mailPort);
         log.info("✅ Username: {}", mailUsername);
-        log.info("✅ Password: {}****", mailPassword.substring(0, 4));
+        log.info("✅ Password configurada ****");
 
         // ✅ Propiedades SMTP
         Properties props = mailSender.getJavaMailProperties();
