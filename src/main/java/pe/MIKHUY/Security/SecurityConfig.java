@@ -84,6 +84,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/profesores/**").hasAnyAuthority("teacher","admin")
                         .requestMatchers("/api/reportes/**").hasAnyAuthority("teacher","admin")
                         .requestMatchers("/api/analisis/**").hasAnyAuthority("teacher","admin")
+                        .requestMatchers("/api/email/**").hasAnyAuthority("teacher", "admin")
                         .requestMatchers("/api/admin/**").hasAuthority("admin")
                         .requestMatchers("/api/usuarios/**").hasAuthority("admin")
                         // 🔹 Cualquier otra ruta requiere autenticación
