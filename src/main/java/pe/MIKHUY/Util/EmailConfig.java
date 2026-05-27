@@ -16,8 +16,8 @@ import java.util.Properties;
 @Slf4j
 public class EmailConfig {
 
-    @Value("${spring.mail.host:smtp.gmail.com}")
-    private String mailHost;
+        @Value("${spring.mail.host}")
+        private String mailHost;
 
     @Value("${spring.mail.port:587}")
     private Integer mailPort;
@@ -36,6 +36,8 @@ public class EmailConfig {
         log.info("========================================");
         log.info("🔧 CONFIGURANDO JAVA MAIL SENDER");
         log.info("========================================");
+        log.info("🔧 MAIL HOST RECIBIDO: {}", mailHost);
+        log.info("🔧 MAIL PORT RECIBIDO: {}", mailPort);
 
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
 
@@ -62,7 +64,7 @@ public class EmailConfig {
         props.put("mail.smtp.timeout", "10000");
         props.put("mail.smtp.writetimeout", "10000");
 
-        log.info("✅ SSL habilitado en puerto 465");
+        log.info("✅ SSL habilitado en puerto 587");
         log.info("✅ Autenticación: habilitada");
         log.info("========================================");
 
@@ -79,7 +81,7 @@ public class EmailConfig {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
 
         // Configuración del servidor SMTP
-        String smtpHost = host != null ? host : "smtp.gmail.com";
+        String smtpHost = host != null ? host : "smtp-relay.brevo.com";
         Integer smtpPort = port != null ? port : 587;
 
         mailSender.setHost(smtpHost);
