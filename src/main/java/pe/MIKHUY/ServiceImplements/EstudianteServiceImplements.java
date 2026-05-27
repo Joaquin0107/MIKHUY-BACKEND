@@ -9,12 +9,17 @@ import pe.MIKHUY.DTOs.response.EstadisticasEstudianteResponse;
 import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.DTOs.response.RankingResponse;
 import pe.MIKHUY.Entities.Estudiante;
+import pe.MIKHUY.Entities.MedicionSalud;
 import pe.MIKHUY.Entities.Usuario;
 import pe.MIKHUY.Repositories.*;
 import pe.MIKHUY.Service.EstudianteService;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,6 +34,7 @@ public class EstudianteServiceImplements implements EstudianteService {
     private final SesionJuegoRepository sesionJuegoRepository;
     private final CanjeRepository canjeRepository;
     private final NotificacionRepository notificacionRepository;
+    private final MedicionSaludRepository medicionSaludRepository;
 
     @Override
     public EstudianteResponse getPerfilByUsuarioId(UUID usuarioId) {
@@ -132,6 +138,14 @@ public class EstudianteServiceImplements implements EstudianteService {
         // Guardar cambios
         usuarioRepository.save(usuario);
         estudianteRepository.save(estudiante);
+
+        // ✅ FIX: Sincronizar MedicionSalud con los nuevos valores de talla y peso
+        // Estado de Salud en el dashboard lee de mediciones_salud, no de estudiantes.
+        // Si el estudiante actualiza talla/peso en su perfil, se debe crear o actualizar
+        // la medición de salud más reciente para que ambas vistas sean consistentes.
+        if (request.getPeso() != null || request.getTalla() != null) {
+            sincronizarMedicionSalud(estudiante);
+        }
 
         log.info("Perfil actualizado exitosamente para usuario: {}", usuario.getEmail());
 
@@ -254,6 +268,42 @@ public class EstudianteServiceImplements implements EstudianteService {
         }
 
         return exito;
+    }
+
+    /**
+     * Sincroniza la tabla mediciones_salud con los valores actuales de talla/peso del estudiante.
+     * Se llama al actualizar el perfil para mantener consistencia con el Estado de Salud del dashboard.
+     */
+    private void sincronizarMedicionSalud(Estudiante estudiante) {
+        try {
+            BigDecimal peso = estudiante.getPeso();
+            BigDecimal tallaMetros = estudiante.getTalla(); // en METROS (ej: 1.57), igual que medicion_salud.talla
+
+            if (peso == null || tallaMetros == null || tallaMetros.compareTo(BigDecimal.ZERO) == 0) {
+                log.warn("No se puede crear medición: talla o peso nulos para estudiante {}", estudiante.getId());
+                return;
+            }
+
+            // ✅ MedicionSalud.talla está en METROS igual que estudiante.talla (ej: 1.57).
+            // Pasar directamente sin convertir. @PrePersist calcula IMC y estadoNutricional.
+            // Siempre crear una NUEVA medición — fechaRegistro tiene @CreationTimestamp
+            // y updatable=false, no se puede editar una medición existente.
+            MedicionSalud medicion = MedicionSalud.builder()
+                    .estudiante(estudiante)
+                    .peso(peso)
+                    .talla(tallaMetros)  // en metros, igual que la BD
+                    .notas("Actualizado desde perfil del estudiante")
+                    .build();
+            // imc y estadoNutricional los calcula automáticamente @PrePersist/@PreUpdate
+
+            medicionSaludRepository.save(medicion);
+            log.info("Nueva medición de salud registrada: peso={}kg, talla={}m",
+                    peso, tallaMetros);
+
+        } catch (Exception e) {
+            // No fallar el update de perfil si esto falla
+            log.error("Error sincronizando medición de salud: {}", e.getMessage());
+        }
     }
 
     /**

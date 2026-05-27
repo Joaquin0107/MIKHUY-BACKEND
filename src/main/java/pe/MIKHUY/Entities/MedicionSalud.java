@@ -33,7 +33,7 @@ public class MedicionSalud {
     private BigDecimal peso; // en kg
 
     @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal talla; // en cm
+    private BigDecimal talla; // en METROS (ej: 1.57)
 
     @Column(precision = 5, scale = 2)
     private BigDecimal imc; // Índice de Masa Corporal
@@ -56,12 +56,9 @@ public class MedicionSalud {
     @PreUpdate
     public void calcularIMC() {
         if (peso != null && talla != null && talla.compareTo(BigDecimal.ZERO) > 0) {
-            // Convertir talla de cm a metros
-            BigDecimal tallaMetros = talla.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-
-            // Calcular IMC
+            // talla ya está en METROS (ej: 1.57) — no convertir
             this.imc = peso.divide(
-                    tallaMetros.multiply(tallaMetros),
+                    talla.multiply(talla),
                     2,
                     RoundingMode.HALF_UP
             );

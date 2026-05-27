@@ -282,11 +282,12 @@ public class DashboardServiceImplements implements DashboardService {
      * Mapper de MedicionSalud a MedicionSaludResponse
      */
     private MedicionSaludResponse mapMedicionToResponse(MedicionSalud medicion) {
+        // talla ya está en METROS en BD (ej: 1.57) — pasar directo al response
         return MedicionSaludResponse.builder()
                 .id(medicion.getId().toString())
                 .estudianteId(medicion.getEstudiante().getId().toString())
                 .peso(medicion.getPeso())
-                .talla(medicion.getTalla())
+                .talla(medicion.getTalla())  // metros, el frontend muestra "{{ talla }} m"
                 .imc(medicion.getImc())
                 .estadoNutricional(medicion.getEstadoNutricional())
                 .fechaRegistro(medicion.getFechaRegistro())
