@@ -26,6 +26,9 @@ public class EmailServiceImplements implements EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${spring.mail.from}")
+    private String fromDisplay;
+
     @PostConstruct
     public void init() {
         log.info("========================================");
@@ -42,7 +45,7 @@ public class EmailServiceImplements implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-            helper.setFrom("MIKHUY <" + fromEmail + ">");
+            helper.setFrom("MIKHUY <" + fromDisplay + ">");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(text, false);
@@ -66,7 +69,7 @@ public class EmailServiceImplements implements EmailService {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        helper.setFrom("MIKHUY <" + fromEmail + ">");
+        helper.setFrom("MIKHUY <" + fromDisplay + ">");
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(buildHtmlContent(text, profesorNombre), true);

@@ -52,11 +52,11 @@ public class EmailConfig {
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.ssl.enable", "false");        // ✅ NO SSL directo
+        props.put("mail.smtp.starttls.enable", "true");    // ✅ STARTTLS
+        props.put("mail.smtp.starttls.required", "true");  // ✅ requerido
         props.put("mail.smtp.ssl.trust", mailHost);
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
-        props.put("mail.smtp.starttls.enable", "false");
-        props.put("mail.smtp.starttls.required", "false");
         props.put("mail.debug", "true");
         props.put("mail.smtp.connectiontimeout", "10000");
         props.put("mail.smtp.timeout", "10000");
