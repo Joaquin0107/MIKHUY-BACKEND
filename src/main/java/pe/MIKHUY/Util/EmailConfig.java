@@ -16,8 +16,8 @@ import java.util.Properties;
 @Slf4j
 public class EmailConfig {
 
-        @Value("${spring.mail.host}")
-        private String mailHost;
+    @Value("${spring.mail.host}")
+    private String mailHost;
 
     @Value("${spring.mail.port:587}")
     private Integer mailPort;
@@ -47,7 +47,7 @@ public class EmailConfig {
         mailSender.setPassword(mailPassword);
 
         log.info("✅ Host: {}", mailHost);
-        log.info("✅ Port: 465 (SSL)");
+        log.info("✅ Port: 587 (SSL)");
         log.info("✅ Username: {}", mailUsername);
         log.info("✅ Password configurada ****");
 
