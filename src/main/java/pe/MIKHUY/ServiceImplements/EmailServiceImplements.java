@@ -3,37 +3,39 @@ package pe.MIKHUY.ServiceImplements;
 import pe.MIKHUY.Service.EmailService;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class EmailServiceImplements implements EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
 
-    @Value("${spring.mail.username}")
+    @Value("${brevo.from.email}")
     private String fromEmail;
 
-    @Value("${spring.mail.from}")
-    private String fromDisplay;
+    @Value("${brevo.from.name:MIKHUY}")
+    private String fromName;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
     @PostConstruct
     public void init() {
         log.info("========================================");
-        log.info("📧 EMAIL SERVICE - BREVO SMTP");
-        log.info("📧 From: {}", fromEmail);
+        log.info("📧 EMAIL SERVICE - Brevo API HTTP");
+        log.info("📧 From: {} <{}>", fromName, fromEmail);
         log.info("========================================");
     }
 
@@ -42,18 +44,24 @@ public class EmailServiceImplements implements EmailService {
         try {
             log.info("📧 Enviando email simple a: {}", to);
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            HttpHeaders headers = createHeaders();
 
-            helper.setFrom("MIKHUY <" + fromDisplay + ">");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(text, false);
+            Map<String, Object> body = new HashMap<>();
+            body.put("sender", Map.of("name", fromName, "email", fromEmail));
+            body.put("to", List.of(Map.of("email", to)));
+            body.put("subject", subject);
+            body.put("textContent", text);
 
-            mailSender.send(message);
-            log.info("✅ Email simple enviado a: {}", to);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, request, String.class);
 
-        } catch (MessagingException e) {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("✅ Email simple enviado a: {}", to);
+            } else {
+                throw new RuntimeException("Error Brevo: " + response.getBody());
+            }
+
+        } catch (Exception e) {
             log.error("❌ Error enviando email: {}", e.getMessage());
             throw new RuntimeException("Error al enviar email: " + e.getMessage(), e);
         }
@@ -66,22 +74,37 @@ public class EmailServiceImplements implements EmailService {
 
         log.info("📧 Enviando email con PDF a: {}", to);
 
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        HttpHeaders headers = createHeaders();
 
-        helper.setFrom("MIKHUY <" + fromDisplay + ">");
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(buildHtmlContent(text, profesorNombre), true);
-        helper.addAttachment(
-                attachment.getOriginalFilename() != null
-                        ? attachment.getOriginalFilename()
-                        : "reporte.pdf",
-                attachment
-        );
+        String pdfBase64 = Base64.getEncoder().encodeToString(attachment.getBytes());
 
-        mailSender.send(message);
-        log.info("✅ Email con PDF enviado a: {}", to);
+        Map<String, Object> attachmentMap = new HashMap<>();
+        attachmentMap.put("content", pdfBase64);
+        attachmentMap.put("name", attachment.getOriginalFilename() != null
+                ? attachment.getOriginalFilename() : "reporte.pdf");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("sender", Map.of("name", fromName, "email", fromEmail));
+        body.put("to", List.of(Map.of("email", to)));
+        body.put("subject", subject);
+        body.put("htmlContent", buildHtmlContent(text, profesorNombre));
+        body.put("attachment", List.of(attachmentMap));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            log.info("✅ Email con PDF enviado a: {}", to);
+        } else {
+            throw new RuntimeException("Error Brevo: " + response.getBody());
+        }
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", brevoApiKey);
+        return headers;
     }
 
     private String buildHtmlContent(String message, String profesorNombre) {
