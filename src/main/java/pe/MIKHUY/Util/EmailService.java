@@ -5,7 +5,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -25,33 +24,8 @@ import java.time.LocalDateTime;
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender defaultMailSender;
     private final EmailConfig emailConfig;
     private final CorreoEnviadoRepository correoEnviadoRepository;
-
-    /**
-     * Enviar email simple (texto plano) con el servidor por defecto
-     */
-    public void sendSimpleEmail(String to, String subject, String text) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(text);
-
-            defaultMailSender.send(message);
-
-            log.info("Email enviado exitosamente a: {}", to);
-
-            // Guardar registro
-            guardarRegistroCorreo(null, to, subject, text, null, CorreoEnviado.EstadoCorreoEnum.enviado);
-
-        } catch (Exception e) {
-            log.error("Error al enviar email a {}: {}", to, e.getMessage());
-            guardarRegistroCorreo(null, to, subject, text, null, CorreoEnviado.EstadoCorreoEnum.fallido);
-            throw new RuntimeException("Error al enviar email: " + e.getMessage());
-        }
-    }
 
     /**
      * Enviar email HTML con adjuntos usando credenciales del profesor
@@ -67,35 +41,28 @@ public class EmailService {
             String attachmentPath
     ) {
         try {
-            // Crear JavaMailSender con credenciales del profesor
             JavaMailSender profesorMailSender = emailConfig.createCustomMailSender(
                     profesorEmail,
                     profesorPassword,
-                    "smtp.gmail.com", // Cambiar según proveedor
+                    "smtp.gmail.com",
                     587
             );
 
-            // Crear mensaje MIME
             MimeMessage message = profesorMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(profesorEmail);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true = HTML
+            helper.setText(htmlContent, true);
 
-            // Agregar adjunto si existe
             if (attachmentPath != null && !attachmentPath.isEmpty()) {
                 FileSystemResource file = new FileSystemResource(new File(attachmentPath));
                 helper.addAttachment(file.getFilename(), file);
             }
 
-            // Enviar
             profesorMailSender.send(message);
-
             log.info("Email enviado desde profesor {} a: {}", profesorEmail, to);
-
-            // Guardar registro
             guardarRegistroCorreo(null, to, subject, htmlContent, attachmentPath, CorreoEnviado.EstadoCorreoEnum.enviado);
 
         } catch (MessagingException e) {
@@ -117,16 +84,7 @@ public class EmailService {
             String pdfPath
     ) {
         String htmlContent = buildReportEmailHtml(studentName);
-
-        sendEmailFromProfesor(
-                null,
-                profesorEmail,
-                profesorPassword,
-                to,
-                subject,
-                htmlContent,
-                pdfPath
-        );
+        sendEmailFromProfesor(null, profesorEmail, profesorPassword, to, subject, htmlContent, pdfPath);
     }
 
     /**
@@ -167,13 +125,9 @@ public class EmailService {
     public boolean validateEmailCredentials(String email, String password) {
         try {
             JavaMailSender testSender = emailConfig.createCustomMailSender(email, password, "smtp.gmail.com", 587);
-
-            // Intentar crear un mensaje (no se envía)
             MimeMessage message = testSender.createMimeMessage();
-
             log.info("Credenciales de email validadas correctamente para: {}", email);
             return true;
-
         } catch (Exception e) {
             log.error("Error validando credenciales de email: {}", e.getMessage());
             return false;
@@ -183,7 +137,7 @@ public class EmailService {
     /**
      * Guardar registro de correo enviado en la BD
      */
-    private void guardarRegistroCorreo(
+    public void guardarRegistroCorreo(
             pe.MIKHUY.Entities.Reporte reporte,
             String destinatario,
             String asunto,
@@ -200,7 +154,6 @@ public class EmailService {
             correo.setAdjuntoUrl(adjuntoUrl);
             correo.setEstado(estado);
             correo.setFechaEnvio(LocalDateTime.now());
-
             correoEnviadoRepository.save(correo);
         } catch (Exception e) {
             log.error("Error al guardar registro de correo: {}", e.getMessage());
