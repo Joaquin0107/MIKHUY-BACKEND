@@ -19,23 +19,23 @@ import java.util.*;
 @Slf4j
 public class EmailServiceImplements implements EmailService {
 
-    @Value("${brevo.api.key}")
-    private String brevoApiKey;
+    @Value("${resend.api.key}")
+    private String resendApiKey;
 
-    @Value("${brevo.from.email}")
+    @Value("${resend.from.email:onboarding@resend.dev}")
     private String fromEmail;
 
-    @Value("${brevo.from.name:MIKHUY}")
-    private String fromName;
-
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+    private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
     @PostConstruct
     public void init() {
         log.info("========================================");
-        log.info("📧 EMAIL SERVICE - Brevo API HTTP");
-        log.info("📧 From: {} <{}>", fromName, fromEmail);
+        log.info("📧 CONFIGURACIÓN DE EMAIL SERVICE (RESEND)");
+        log.info("========================================");
+        log.info("📧 From Email: {}", fromEmail);
+        log.info("📧 API Key configurada: {}",
+                resendApiKey != null && !resendApiKey.isEmpty() ? "✅ SÍ" : "❌ NO");
         log.info("========================================");
     }
 
@@ -47,22 +47,25 @@ public class EmailServiceImplements implements EmailService {
             HttpHeaders headers = createHeaders();
 
             Map<String, Object> body = new HashMap<>();
-            body.put("sender", Map.of("name", fromName, "email", fromEmail));
-            body.put("to", List.of(Map.of("email", to)));
+            body.put("from", "MIKHUY <" + fromEmail + ">");
+            body.put("to", Collections.singletonList(to));
             body.put("subject", subject);
-            body.put("textContent", text);
+            body.put("text", text);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    RESEND_API_URL, request, String.class
+            );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("✅ Email simple enviado a: {}", to);
+                log.info("✅ Email enviado exitosamente");
             } else {
-                throw new RuntimeException("Error Brevo: " + response.getBody());
+                throw new RuntimeException("Error de Resend: " + response.getBody());
             }
 
         } catch (Exception e) {
-            log.error("❌ Error enviando email: {}", e.getMessage());
+            log.error("❌ Error al enviar email: {}", e.getMessage());
             throw new RuntimeException("Error al enviar email: " + e.getMessage(), e);
         }
     }
@@ -71,39 +74,47 @@ public class EmailServiceImplements implements EmailService {
     public void sendEmailWithAttachment(String to, String subject, String text,
                                         MultipartFile attachment, String profesorNombre)
             throws MessagingException, IOException {
+        try {
+            log.info("📧 Enviando email con PDF a: {}", to);
 
-        log.info("📧 Enviando email con PDF a: {}", to);
+            HttpHeaders headers = createHeaders();
 
-        HttpHeaders headers = createHeaders();
+            String pdfBase64 = Base64.getEncoder().encodeToString(attachment.getBytes());
 
-        String pdfBase64 = Base64.getEncoder().encodeToString(attachment.getBytes());
+            Map<String, String> attachmentMap = new HashMap<>();
+            attachmentMap.put("filename", attachment.getOriginalFilename() != null
+                    ? attachment.getOriginalFilename() : "reporte.pdf");
+            attachmentMap.put("content", pdfBase64);
 
-        Map<String, Object> attachmentMap = new HashMap<>();
-        attachmentMap.put("content", pdfBase64);
-        attachmentMap.put("name", attachment.getOriginalFilename() != null
-                ? attachment.getOriginalFilename() : "reporte.pdf");
+            Map<String, Object> body = new HashMap<>();
+            body.put("from", "MIKHUY <" + fromEmail + ">");
+            body.put("to", Collections.singletonList(to));
+            body.put("subject", subject);
+            body.put("html", buildHtmlContent(text, profesorNombre));
+            body.put("attachments", Collections.singletonList(attachmentMap));
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("sender", Map.of("name", fromName, "email", fromEmail));
-        body.put("to", List.of(Map.of("email", to)));
-        body.put("subject", subject);
-        body.put("htmlContent", buildHtmlContent(text, profesorNombre));
-        body.put("attachment", List.of(attachmentMap));
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    RESEND_API_URL, request, String.class
+            );
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            log.info("✅ Email con PDF enviado a: {}", to);
-        } else {
-            throw new RuntimeException("Error Brevo: " + response.getBody());
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("✅ Email con PDF enviado exitosamente");
+            } else {
+                throw new RuntimeException("Error de Resend: " + response.getBody());
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error al enviar email con PDF: {}", e.getMessage());
+            throw new RuntimeException("Error al enviar email con PDF: " + e.getMessage(), e);
         }
     }
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("api-key", brevoApiKey);
+        headers.set("Authorization", "Bearer " + resendApiKey);
         return headers;
     }
 
