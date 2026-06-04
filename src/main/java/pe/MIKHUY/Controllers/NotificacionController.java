@@ -21,7 +21,11 @@ import java.util.UUID;
 @RequestMapping("/notificaciones")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {
+        "http://localhost:4200",
+        "https://mikhuy-front.web.app",
+        "https://mikhuy-front.firebaseapp.com"
+})
 public class NotificacionController {
 
     private final NotificacionService notificacionService;
