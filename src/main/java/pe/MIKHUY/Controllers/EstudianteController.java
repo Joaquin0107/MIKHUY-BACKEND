@@ -7,24 +7,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pe.MIKHUY.DTOs.ApiResponse;
+import pe.MIKHUY.DTOs.request.EnviarNotificacionRequest;
 import pe.MIKHUY.DTOs.request.UpdateProfileRequest;
 import pe.MIKHUY.DTOs.response.EstadisticasEstudianteResponse;
 import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.DTOs.response.RankingResponse;
 import pe.MIKHUY.Security.CurrentUserUtil;
+import pe.MIKHUY.Service.AmigoService;
 import pe.MIKHUY.Service.EstudianteService;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/estudiantes")  // ✅ CORREGIDO: Agregar /api/
+@RequestMapping("/api/estudiantes")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = {"http://localhost:4200", "https://mikhuy-front.web.app", "https://mikhuy-front.firebaseapp.com"})
 public class EstudianteController {
     private final EstudianteService estudianteService;
     private final CurrentUserUtil currentUserUtil;
+    private final AmigoService amigoService;   // ← único agregado al constructor
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Endpoints existentes (sin cambios)
+    // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/perfil")
     @PreAuthorize("hasAuthority('student')")
@@ -134,6 +141,56 @@ public class EstudianteController {
             log.error("❌ Error listando estudiantes: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Endpoints nuevos: sistema de amigos
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Devuelve los compañeros del mismo grado y sección, excluyendo al propio estudiante.
+     * GET /api/estudiantes/companeros
+     */
+    @GetMapping("/companeros")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<List<EstudianteResponse>>> getCompaneros(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            List<EstudianteResponse> companeros = amigoService.getCompanerosMismoGrupo(usuarioId);
+            log.info("✅ Compañeros obtenidos para usuario: {}", usuarioId);
+            return ResponseEntity.ok(ApiResponse.success("Compañeros obtenidos", companeros));
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo compañeros: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Error obteniendo compañeros: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Envía una notificación de amistad a otro estudiante.
+     * Tipos: amistad_solicitud | amistad_aceptada | amistad_rechazada
+     * POST /api/estudiantes/notificar-amigo
+     */
+    @PostMapping("/notificar-amigo")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<Void>> notificarAmigo(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody EnviarNotificacionRequest request) {
+        try {
+            UUID remitenteUsuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            amigoService.enviarNotificacion(remitenteUsuarioId, request);
+            log.info("✅ Notificación '{}' enviada al estudiante: {}", request.getTipo(), request.getDestinatarioEstudianteId());
+            return ResponseEntity.ok(ApiResponse.success("Notificación enviada", null));
+        } catch (IllegalArgumentException e) {
+            log.warn("⚠️ Solicitud inválida: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("❌ Error enviando notificación: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Error enviando notificación: " + e.getMessage()));
         }
     }
 }
