@@ -33,14 +33,18 @@ public class AuthResponse {
         private String nombreCompleto;
         private String avatarUrl;
 
+        // ── Verificación de cuenta ──────────────────────────────────────
+        private Boolean verificado;
+        private String  tokenVerificacion; // solo se envía si NO está verificado
+
         // Campos específicos de estudiante
-        private UUID estudianteId;
+        private UUID    estudianteId;
         private Integer puntosAcumulados;
-        private String grado;
-        private String seccion;
+        private String  grado;
+        private String  seccion;
 
         // Campos específicos de profesor
-        private UUID profesorId;
+        private UUID   profesorId;
         private String materia;
     }
 }

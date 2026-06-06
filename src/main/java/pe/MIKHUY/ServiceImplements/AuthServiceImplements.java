@@ -1,4 +1,5 @@
 package pe.MIKHUY.ServiceImplements;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +19,7 @@ import pe.MIKHUY.Repositories.ProfesorRepository;
 import pe.MIKHUY.Repositories.UsuarioRepository;
 import pe.MIKHUY.Security.JwtUtil;
 import pe.MIKHUY.Service.AuthService;
+import pe.MIKHUY.Service.VerificacionService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,19 +28,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImplements implements AuthService {
-    private final UsuarioRepository usuarioRepository;
-    private final EstudianteRepository estudianteRepository;
-    private final ProfesorRepository profesorRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
+
+    private final UsuarioRepository      usuarioRepository;
+    private final EstudianteRepository   estudianteRepository;
+    private final ProfesorRepository     profesorRepository;
+    private final PasswordEncoder        passwordEncoder;
+    private final JwtUtil                jwtUtil;
+    private final AuthenticationManager  authenticationManager;
+    private final VerificacionService    verificacionService;   // ← nuevo
 
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
         log.info("Intento de login para usuario: {}", request.getEmail());
 
-        // Autenticar usuario con Spring Security
+        // 1. Autenticar credenciales con Spring Security
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail().toLowerCase(),
@@ -46,20 +50,35 @@ public class AuthServiceImplements implements AuthService {
                 )
         );
 
-        // Buscar usuario en BD
+        // 2. Buscar usuario en BD
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Verificar que esté activo
+        // 3. Verificar que esté activo
         if (!usuario.getActivo()) {
             throw new RuntimeException("Usuario inactivo. Contacte al administrador");
         }
 
-        // Actualizar última conexión
+        // 4. ── Verificación de cuenta ────────────────────────────────────────
+        //    Si el usuario NO está verificado, generamos/renovamos su token
+        //    y lo devolvemos en la respuesta para que el frontend redirija a /verify
+        if (!usuario.isVerificado()) {
+            // Generar token si no tiene uno vigente
+            if (usuario.getTokenVerificacion() == null || !usuario.tokenEstaVigente()) {
+                verificacionService.generarTokenActivacion(usuario);
+                // Recargar para obtener el token recién guardado
+                usuario = usuarioRepository.findByEmail(request.getEmail().toLowerCase())
+                        .orElseThrow();
+            }
+            log.warn("Login bloqueado — cuenta no verificada: {}", usuario.getEmail());
+            return buildAuthResponseNoVerificado(usuario);
+        }
+
+        // 5. Actualizar última conexión
         usuario.setUltimaConexion(LocalDateTime.now());
         usuarioRepository.save(usuario);
 
-        // Generar token JWT
+        // 6. Generar token JWT
         String token = jwtUtil.generateToken(
                 usuario.getId(),
                 usuario.getEmail(),
@@ -67,8 +86,6 @@ public class AuthServiceImplements implements AuthService {
         );
 
         log.info("Login exitoso para usuario: {}", usuario.getEmail());
-
-        // Construir respuesta según rol
         return buildAuthResponse(token, usuario);
     }
 
@@ -80,53 +97,55 @@ public class AuthServiceImplements implements AuthService {
     @Override
     @Transactional
     public void changePassword(String userId, ChangePasswordRequest request) {
-        log.info("Intento de cambio de contraseña para usuario ID: {}", userId);
-
-        // Verificar que las contraseñas nuevas coincidan
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
 
-        // Buscar usuario
         Usuario usuario = usuarioRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Verificar contraseña actual
         if (!passwordEncoder.matches(request.getOldPassword(), usuario.getPasswordHash())) {
             throw new IllegalArgumentException("Contraseña actual incorrecta");
         }
 
-        // Actualizar contraseña
         usuario.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         usuarioRepository.save(usuario);
-
-        log.info("Contraseña actualizada exitosamente para usuario: {}", usuario.getEmail());
+        log.info("Contraseña actualizada para: {}", usuario.getEmail());
     }
 
     @Override
     public AuthResponse refreshToken(String token) {
-        // Extraer información del token actual
         String email = jwtUtil.extractUsername(token);
-
-        // Buscar usuario
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Generar nuevo token
         String newToken = jwtUtil.generateToken(
-                usuario.getId(),
-                usuario.getEmail(),
-                usuario.getRol().name()
-        );
+                usuario.getId(), usuario.getEmail(), usuario.getRol().name());
 
-        log.info("Token refrescado para usuario: {}", usuario.getEmail());
-
+        log.info("Token refrescado para: {}", usuario.getEmail());
         return buildAuthResponse(newToken, usuario);
     }
 
-    /**
-     * Construir respuesta de autenticación según el rol del usuario
-     */
+    // ── Respuesta para cuenta NO verificada (sin JWT, con tokenVerificacion) ─
+    private AuthResponse buildAuthResponseNoVerificado(Usuario usuario) {
+        AuthResponse.UserInfo userInfo = AuthResponse.UserInfo.builder()
+                .id(usuario.getId())
+                .email(usuario.getEmail())
+                .rol(usuario.getRol().name().toLowerCase())
+                .nombres(usuario.getNombres())
+                .apellidos(usuario.getApellidos())
+                .verificado(false)
+                .tokenVerificacion(usuario.getTokenVerificacion())
+                .build();
+
+        // No incluimos token JWT — el frontend detecta su ausencia
+        return AuthResponse.builder()
+                .tokenType("Bearer")
+                .user(userInfo)
+                .build();
+    }
+
+    // ── Respuesta normal (con JWT) ────────────────────────────────────────────
     private AuthResponse buildAuthResponse(String token, Usuario usuario) {
         AuthResponse.UserInfo userInfo = AuthResponse.UserInfo.builder()
                 .id(usuario.getId())
@@ -136,24 +155,22 @@ public class AuthServiceImplements implements AuthService {
                 .apellidos(usuario.getApellidos())
                 .nombreCompleto(usuario.getNombreCompleto())
                 .avatarUrl(usuario.getAvatarUrl())
+                .verificado(true)
                 .build();
 
-        // Agregar información específica según el rol
         if (usuario.getRol() == Usuario.RolEnum.student) {
-            Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
-                    .orElse(null);
-            if (estudiante != null) {
-                userInfo.setEstudianteId(estudiante.getId());
-                userInfo.setPuntosAcumulados(estudiante.getPuntosAcumulados());
-                userInfo.setGrado(estudiante.getGrado());
-                userInfo.setSeccion(estudiante.getSeccion());
+            Estudiante est = estudianteRepository.findByUsuarioId(usuario.getId()).orElse(null);
+            if (est != null) {
+                userInfo.setEstudianteId(est.getId());
+                userInfo.setPuntosAcumulados(est.getPuntosAcumulados());
+                userInfo.setGrado(est.getGrado());
+                userInfo.setSeccion(est.getSeccion());
             }
         } else if (usuario.getRol() == Usuario.RolEnum.teacher) {
-            Profesor profesor = profesorRepository.findByUsuarioId(usuario.getId())
-                    .orElse(null);
-            if (profesor != null) {
-                userInfo.setProfesorId(profesor.getId());
-                userInfo.setMateria(profesor.getMateria());
+            Profesor prof = profesorRepository.findByUsuarioId(usuario.getId()).orElse(null);
+            if (prof != null) {
+                userInfo.setProfesorId(prof.getId());
+                userInfo.setMateria(prof.getMateria());
             }
         }
 
@@ -163,5 +180,4 @@ public class AuthServiceImplements implements AuthService {
                 .user(userInfo)
                 .build();
     }
-
 }
