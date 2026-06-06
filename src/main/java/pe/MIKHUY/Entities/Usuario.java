@@ -51,6 +51,16 @@ public class Usuario {
     @Column(name = "ultima_conexion")
     private LocalDateTime ultimaConexion;
 
+    // ── Verificación de cuenta ──────────────────────────────────────────────
+    @Column(name = "verificado", nullable = false)
+    private Boolean verificado = false;
+
+    @Column(name = "token_verificacion", length = 255)
+    private String tokenVerificacion;
+
+    @Column(name = "token_expira")
+    private LocalDateTime tokenExpira;
+
     // Relaciones
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Estudiante estudiante;
@@ -66,6 +76,9 @@ public class Usuario {
         if (activo == null) {
             activo = true;
         }
+        if (verificado == null) {
+            verificado = false;
+        }
     }
 
     // Enum para roles
@@ -78,5 +91,14 @@ public class Usuario {
     // Método auxiliar
     public String getNombreCompleto() {
         return nombres + " " + apellidos;
+    }
+
+    // Helpers de verificación
+    public boolean isVerificado() {
+        return Boolean.TRUE.equals(verificado);
+    }
+
+    public boolean tokenEstaVigente() {
+        return tokenExpira != null && LocalDateTime.now().isBefore(tokenExpira);
     }
 }
