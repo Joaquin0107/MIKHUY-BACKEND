@@ -57,6 +57,10 @@ public class Estudiante {
     @OneToMany(mappedBy = "estudiante", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Canje> canjes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profesor_id")
+    private Profesor profesor;
+
     @PrePersist
     protected void onCreate() {
         if (fechaRegistro == null) {

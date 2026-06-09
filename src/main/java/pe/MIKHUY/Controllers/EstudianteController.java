@@ -12,6 +12,8 @@ import pe.MIKHUY.DTOs.request.UpdateProfileRequest;
 import pe.MIKHUY.DTOs.response.EstadisticasEstudianteResponse;
 import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.DTOs.response.RankingResponse;
+import pe.MIKHUY.Entities.Estudiante;
+import pe.MIKHUY.Repositories.EstudianteRepository;
 import pe.MIKHUY.Security.CurrentUserUtil;
 import pe.MIKHUY.Service.AmigoService;
 import pe.MIKHUY.Service.EstudianteService;
@@ -27,7 +29,8 @@ import java.util.UUID;
 public class EstudianteController {
     private final EstudianteService estudianteService;
     private final CurrentUserUtil currentUserUtil;
-    private final AmigoService amigoService;   // ← único agregado al constructor
+    private final AmigoService amigoService;
+    private final EstudianteRepository estudianteRepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Endpoints existentes (sin cambios)
@@ -132,11 +135,22 @@ public class EstudianteController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('teacher', 'admin')")
-    public ResponseEntity<ApiResponse<List<EstudianteResponse>>> getAll() {
+    @PreAuthorize("hasAuthority('teacher')")
+    public ResponseEntity<ApiResponse<List<EstudianteResponse>>> getAll(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            List<EstudianteResponse> estudiantes = estudianteService.getAll();
-            return ResponseEntity.ok(ApiResponse.success("Lista de estudiantes", estudiantes));
+            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            List<Estudiante> asignados = estudianteRepository
+                    .findByProfesorUsuarioId(usuarioId);
+
+            List<EstudianteResponse> responses = asignados.stream()
+                    .map(e -> estudianteService.getById(e.getId()))
+                    .toList();
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    responses.isEmpty() ? "No tienes estudiantes asignados" : "Lista de estudiantes",
+                    responses));
+
         } catch (Exception e) {
             log.error("❌ Error listando estudiantes: {}", e.getMessage());
             return ResponseEntity.badRequest()

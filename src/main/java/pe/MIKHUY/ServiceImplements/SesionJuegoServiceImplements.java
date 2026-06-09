@@ -27,6 +27,8 @@ public class SesionJuegoServiceImplements implements SesionJuegoService {
     private final NutrimentalRespuestaRepository nutrimentalRespuestaRepository;
     private final Reto7DiasRegistroRepository reto7DiasRegistroRepository;
     private final CoachRespuestaRepository coachRespuestaRepository;
+    private final ResultadoMicronutrientesRepository micronutrientesRepository;
+    private final ResultadoClasificaRepository clasificaRepository;
 
     @Override
     @Transactional
@@ -210,6 +212,47 @@ public class SesionJuegoServiceImplements implements SesionJuegoService {
         }
 
         return mapToResponse(sesiones.get(0));
+    }
+
+    @Override
+    @Transactional
+    public void guardarResultadoMicronutrientes(GuardarMicronutrientesRequest request) {
+        SesionJuego sesion = sesionJuegoRepository.findById(UUID.fromString(request.getSesionId()))
+                .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+
+        ResultadoMicronutrientes resultado = new ResultadoMicronutrientes();
+        resultado.setSesion(sesion);
+        resultado.setNivelNumero(request.getNivelNumero());
+        resultado.setPregunta(request.getPregunta());
+        resultado.setDeficientesCorrectos(request.getDeficientesCorrectos());
+        resultado.setDeficientesSeleccionados(request.getDeficientesSeleccionados());
+        resultado.setAciertos(request.getAciertos());
+        resultado.setPuntosObtenidos(request.getPuntosObtenidos());
+        resultado.setTiempoAgotado(request.getTiempoAgotado() != null && request.getTiempoAgotado());
+
+        micronutrientesRepository.save(resultado);
+        log.info("✅ ResultadoMicronutrientes guardado - sesion={} nivel={}", request.getSesionId(), request.getNivelNumero());
+    }
+
+    @Override
+    @Transactional
+    public void guardarResultadoClasifica(GuardarClasificaRequest request) {
+        SesionJuego sesion = sesionJuegoRepository.findById(UUID.fromString(request.getSesionId()))
+                .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+
+        ResultadoClasifica resultado = new ResultadoClasifica();
+        resultado.setSesion(sesion);
+        resultado.setNivelNumero(request.getNivelNumero());
+        resultado.setGrupoObjetivo(request.getGrupoObjetivo());
+        resultado.setAlimentosCorrectos(request.getAlimentosCorrectos());
+        resultado.setAlimentosSeleccionados(request.getAlimentosSeleccionados());
+        resultado.setAciertos(request.getAciertos());
+        resultado.setPuntosObtenidos(request.getPuntosObtenidos());
+        resultado.setTiempoAgotado(request.getTiempoAgotado() != null && request.getTiempoAgotado());
+        resultado.setTiempoUsado(request.getTiempoUsado() != null ? request.getTiempoUsado() : 0);
+
+        clasificaRepository.save(resultado);
+        log.info("✅ ResultadoClasifica guardado - sesion={} nivel={} grupo={}", request.getSesionId(), request.getNivelNumero(), request.getGrupoObjetivo());
     }
 
     /**

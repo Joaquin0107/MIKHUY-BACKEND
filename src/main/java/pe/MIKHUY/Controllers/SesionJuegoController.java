@@ -161,4 +161,30 @@ public class SesionJuegoController {
                     .body(ApiResponse.error("Error: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/micronutrientes/resultado")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<Void>> guardarMicronutrientes(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody GuardarMicronutrientesRequest request) {
+        try {
+            sesionJuegoService.guardarResultadoMicronutrientes(request);
+            return ResponseEntity.ok(ApiResponse.success("Resultado guardado", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/clasifica/resultado")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<Void>> guardarClasifica(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody GuardarClasificaRequest request) {
+        try {
+            sesionJuegoService.guardarResultadoClasifica(request);
+            return ResponseEntity.ok(ApiResponse.success("Resultado guardado", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

@@ -50,6 +50,9 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, UUID> {
     @Query("SELECT e FROM Estudiante e WHERE e.grado = :grado AND e.usuario.activo = true")
     List<Estudiante> findActiveByGrado(@Param("grado") String grado);
 
+    @Query("SELECT e FROM Estudiante e WHERE e.profesor.usuario.id = :usuarioId")
+    List<Estudiante> findByProfesorUsuarioId(@Param("usuarioId") UUID usuarioId);
+
     // Contar estudiantes por grado
     long countByGrado(String grado);
 

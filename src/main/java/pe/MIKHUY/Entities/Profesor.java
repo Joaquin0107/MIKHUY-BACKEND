@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "profesores")
@@ -32,6 +34,9 @@ public class Profesor {
 
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
+
+    @OneToMany(mappedBy = "profesor", fetch = FetchType.LAZY)
+    private List<Estudiante> estudiantes;
 
     @PrePersist
     protected void onCreate() {

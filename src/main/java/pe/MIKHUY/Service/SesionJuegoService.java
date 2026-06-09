@@ -45,4 +45,7 @@ public interface SesionJuegoService {
      * Obtener última sesión de un progreso
      */
     SesionJuegoResponse getUltimaSesion(UUID progresoId);
+
+    void guardarResultadoMicronutrientes(GuardarMicronutrientesRequest request);
+    void guardarResultadoClasifica(GuardarClasificaRequest request);
 }
