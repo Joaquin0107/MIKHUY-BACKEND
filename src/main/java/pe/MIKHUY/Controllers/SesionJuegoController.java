@@ -20,6 +20,7 @@ import pe.MIKHUY.Service.EstudianteService;
 import pe.MIKHUY.Service.SesionJuegoService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -196,11 +197,23 @@ public class SesionJuegoController {
 
     @GetMapping("/micronutrientes/estudiante/{estudianteId}")
     @PreAuthorize("hasAnyAuthority('teacher', 'student')")
-    public ResponseEntity<ApiResponse<List<ResultadoMicronutrientes>>> getMicronutrientesByEstudiante(
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMicronutrientesByEstudiante(
             @PathVariable UUID estudianteId) {
         try {
             List<ResultadoMicronutrientes> resultados = micronutrientesRepository.findBySesionEstudianteId(estudianteId);
-            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", resultados));
+            List<Map<String, Object>> dtos = resultados.stream().map(r -> {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("nivelNumero", r.getNivelNumero());
+                m.put("aciertos", r.getAciertos());
+                m.put("puntosObtenidos", r.getPuntosObtenidos());
+                m.put("tiempoAgotado", r.getTiempoAgotado());
+                m.put("deficientesCorrectos", r.getDeficientesCorrectos());
+                m.put("deficientesSeleccionados", r.getDeficientesSeleccionados());
+                m.put("pregunta", r.getPregunta());
+                m.put("fecha", r.getFecha());
+                return m;
+            }).toList();
+            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", dtos));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
@@ -208,11 +221,24 @@ public class SesionJuegoController {
 
     @GetMapping("/clasifica/estudiante/{estudianteId}")
     @PreAuthorize("hasAnyAuthority('teacher', 'student')")
-    public ResponseEntity<ApiResponse<List<ResultadoClasifica>>> getClasificaByEstudiante(
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getClasificaByEstudiante(
             @PathVariable UUID estudianteId) {
         try {
             List<ResultadoClasifica> resultados = clasificaRepository.findBySesionEstudianteId(estudianteId);
-            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", resultados));
+            List<Map<String, Object>> dtos = resultados.stream().map(r -> {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("nivelNumero", r.getNivelNumero());
+                m.put("aciertos", r.getAciertos());
+                m.put("puntosObtenidos", r.getPuntosObtenidos());
+                m.put("tiempoAgotado", r.getTiempoAgotado());
+                m.put("tiempoUsado", r.getTiempoUsado());
+                m.put("grupoObjetivo", r.getGrupoObjetivo());
+                m.put("alimentosCorrectos", r.getAlimentosCorrectos());
+                m.put("alimentosSeleccionados", r.getAlimentosSeleccionados());
+                m.put("fecha", r.getFecha());
+                return m;
+            }).toList();
+            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", dtos));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
