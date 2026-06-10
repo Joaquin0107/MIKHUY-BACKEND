@@ -222,16 +222,18 @@ public class SesionJuegoServiceImplements implements SesionJuegoService {
 
         ResultadoMicronutrientes resultado = new ResultadoMicronutrientes();
         resultado.setSesion(sesion);
-        resultado.setNivelNumero(request.getNivelNumero());
+        resultado.setNivelNumero(request.getNivelNumero());      // ← confirma que getNivelNumero() existe en el DTO
         resultado.setPregunta(request.getPregunta());
         resultado.setDeficientesCorrectos(request.getDeficientesCorrectos());
         resultado.setDeficientesSeleccionados(request.getDeficientesSeleccionados());
         resultado.setAciertos(request.getAciertos());
         resultado.setPuntosObtenidos(request.getPuntosObtenidos());
         resultado.setTiempoAgotado(request.getTiempoAgotado() != null && request.getTiempoAgotado());
+        resultado.setFecha(LocalDateTime.now());
 
         micronutrientesRepository.save(resultado);
-        log.info("✅ ResultadoMicronutrientes guardado - sesion={} nivel={}", request.getSesionId(), request.getNivelNumero());
+        log.info("✅ Micro guardado - nivel={} aciertos={} puntos={}",
+                request.getNivelNumero(), request.getAciertos(), request.getPuntosObtenidos());
     }
 
     @Override
