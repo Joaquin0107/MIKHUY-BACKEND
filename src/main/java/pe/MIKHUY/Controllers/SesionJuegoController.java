@@ -11,6 +11,10 @@ import pe.MIKHUY.DTOs.ApiResponse;
 import pe.MIKHUY.DTOs.request.*;
 import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.DTOs.response.SesionJuegoResponse;
+import pe.MIKHUY.Entities.ResultadoClasifica;
+import pe.MIKHUY.Entities.ResultadoMicronutrientes;
+import pe.MIKHUY.Repositories.ResultadoClasificaRepository;
+import pe.MIKHUY.Repositories.ResultadoMicronutrientesRepository;
 import pe.MIKHUY.Security.CurrentUserUtil;
 import pe.MIKHUY.Service.EstudianteService;
 import pe.MIKHUY.Service.SesionJuegoService;
@@ -32,6 +36,8 @@ public class SesionJuegoController {
     private final SesionJuegoService sesionJuegoService;
     private final EstudianteService estudianteService;
     private final CurrentUserUtil currentUserUtil;
+    private final ResultadoMicronutrientesRepository micronutrientesRepository;
+    private final ResultadoClasificaRepository clasificaRepository;
 
     /**
      * Iniciar sesión de juego
@@ -183,6 +189,30 @@ public class SesionJuegoController {
         try {
             sesionJuegoService.guardarResultadoClasifica(request);
             return ResponseEntity.ok(ApiResponse.success("Resultado guardado", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/micronutrientes/estudiante/{estudianteId}")
+    @PreAuthorize("hasAnyAuthority('teacher', 'student')")
+    public ResponseEntity<ApiResponse<List<ResultadoMicronutrientes>>> getMicronutrientesByEstudiante(
+            @PathVariable UUID estudianteId) {
+        try {
+            List<ResultadoMicronutrientes> resultados = micronutrientesRepository.findBySesionEstudianteId(estudianteId);
+            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", resultados));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/clasifica/estudiante/{estudianteId}")
+    @PreAuthorize("hasAnyAuthority('teacher', 'student')")
+    public ResponseEntity<ApiResponse<List<ResultadoClasifica>>> getClasificaByEstudiante(
+            @PathVariable UUID estudianteId) {
+        try {
+            List<ResultadoClasifica> resultados = clasificaRepository.findBySesionEstudianteId(estudianteId);
+            return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", resultados));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
