@@ -27,7 +27,7 @@ import java.util.UUID;
  * Endpoints: /api/sesiones/**
  */
 @RestController
-@RequestMapping("/sesiones")
+@RequestMapping("/api/sesiones")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "http://localhost:4200")
