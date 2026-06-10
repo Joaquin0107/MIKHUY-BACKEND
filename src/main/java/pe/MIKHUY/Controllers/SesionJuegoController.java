@@ -30,7 +30,7 @@ import java.util.UUID;
 @RequestMapping("/api/sesiones")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {"http://localhost:4200", "https://mikhuy-front.web.app", "https://mikhuy-front.firebaseapp.com"})
 public class SesionJuegoController {
 
     private final SesionJuegoService sesionJuegoService;
