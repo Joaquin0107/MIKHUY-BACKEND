@@ -22,7 +22,8 @@ import java.util.UUID;
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {"http://localhost:4200", "https://mikhuy-front.web.app", "https://mikhuy-front.firebaseapp.com"})
+
 public class DashboardController {
 
     private final DashboardService dashboardService;
