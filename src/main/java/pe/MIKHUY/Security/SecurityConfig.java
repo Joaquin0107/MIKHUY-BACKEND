@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/estudiantes/**").hasAnyAuthority("student","admin", "teacher")
                         .requestMatchers("/api/juegos/**").hasAnyAuthority("student","teacher","admin")
                         .requestMatchers("/api/progreso/**").hasAnyAuthority("student","admin")
-                        .requestMatchers("/api/sesiones/**").hasAnyAuthority("student","admin")
+                        .requestMatchers("/api/sesiones/**").hasAnyAuthority("student","admin","teacher")
                         .requestMatchers("/api/beneficios/**").hasAnyAuthority("student","teacher","admin")
                         .requestMatchers("/api/canjes/**").hasAnyAuthority("student","admin")
                         .requestMatchers("/api/notificaciones/**").authenticated()
