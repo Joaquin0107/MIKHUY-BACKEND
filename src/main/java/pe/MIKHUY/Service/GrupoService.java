@@ -3,6 +3,7 @@ package pe.MIKHUY.Service;
 import pe.MIKHUY.DTOs.request.CrearGrupoRequest;
 import pe.MIKHUY.DTOs.response.GrupoResumenResponse;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface GrupoService {
@@ -11,4 +12,5 @@ public interface GrupoService {
     GrupoResumenResponse getGrupoDetalle(UUID grupoId);
     GrupoResumenResponse actualizarGrupo(UUID grupoId, CrearGrupoRequest request);
     void eliminarGrupo(UUID grupoId);
+    List<Map<String, Object>> getHistorialActividad(UUID grupoId);
 }

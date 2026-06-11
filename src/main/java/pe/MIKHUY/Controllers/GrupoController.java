@@ -12,6 +12,7 @@ import pe.MIKHUY.DTOs.response.GrupoResumenResponse;
 import pe.MIKHUY.Security.CurrentUserUtil;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -81,6 +82,17 @@ public class GrupoController {
         try {
             grupoService.eliminarGrupo(id);
             return ResponseEntity.ok(ApiResponse.success("Grupo eliminado", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/historial")
+    @PreAuthorize("hasAuthority('teacher')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getHistorial(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success("Historial obtenido",
+                    grupoService.getHistorialActividad(id)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

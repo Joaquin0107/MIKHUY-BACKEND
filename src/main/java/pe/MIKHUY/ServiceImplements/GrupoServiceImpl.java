@@ -144,4 +144,29 @@ public class GrupoServiceImpl implements GrupoService {
                 .comparativaJuegos(comparativa)
                 .build();
     }
+
+    @Override
+    public List<Map<String, Object>> getHistorialActividad(UUID grupoId) {
+        GrupoEstudio grupo = grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+
+        List<Map<String, Object>> historial = new ArrayList<>();
+
+        for (Estudiante e : grupo.getEstudiantes()) {
+            List<SesionJuego> sesiones = sesionJuegoRepository.findByEstudianteId(e.getId());
+            for (SesionJuego s : sesiones) {
+                Map<String, Object> entry = new java.util.LinkedHashMap<>();
+                entry.put("estudianteNombre", e.getUsuario().getNombres() + " " + e.getUsuario().getApellidos());
+                entry.put("juegoNombre", s.getProgreso().getJuego().getNombre());
+                entry.put("fecha", s.getFechaSesion().toLocalDate().toString());
+                entry.put("puntosObtenidos", s.getPuntosObtenidos());
+                entry.put("completado", s.getCompletado());
+                historial.add(entry);
+            }
+        }
+
+        historial.sort(Comparator.comparing(m -> m.get("fecha").toString()));
+        Collections.reverse(historial);
+        return historial;
+    }
 }
