@@ -11,6 +11,7 @@ import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.Security.CurrentUserUtil;
 import pe.MIKHUY.Service.DashboardService;
 import pe.MIKHUY.Service.EstudianteService;
+import pe.MIKHUY.Service.AmigoService;
 
 import java.util.UUID;
 
@@ -29,6 +30,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
     private final EstudianteService estudianteService;
     private final CurrentUserUtil currentUserUtil;
+    private final AmigoService amigoService;
 
     /**
      * Obtener mi dashboard completo
@@ -80,6 +82,33 @@ public class DashboardController {
             );
         } catch (Exception e) {
             log.error("Error obteniendo dashboard: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Dashboard de un amigo (solo lectura, validando amistad confirmada).
+     * GET /api/dashboard/amigo/{id}
+     */
+    @GetMapping("/amigo/{id}")
+    @PreAuthorize("hasAuthority('student')")
+    public ResponseEntity<ApiResponse<DashboardEstudianteResponse>> getDashboardAmigo(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable UUID id) {
+        try {
+            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
+            EstudianteResponse yo = estudianteService.getPerfilByUsuarioId(usuarioId);
+
+            if (!amigoService.sonAmigos(yo.getId(), id)) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.error("No tienes permiso para ver este perfil"));
+            }
+
+            DashboardEstudianteResponse dashboard = dashboardService.getDashboardEstudiante(id);
+            return ResponseEntity.ok(ApiResponse.success("Dashboard obtenido", dashboard));
+        } catch (Exception e) {
+            log.error("Error obteniendo dashboard de amigo: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error: " + e.getMessage()));
         }

@@ -9,6 +9,8 @@ import pe.MIKHUY.Entities.Notificacion;
 import pe.MIKHUY.Entities.Usuario;
 import pe.MIKHUY.Repositories.NotificacionRepository;
 import pe.MIKHUY.Repositories.UsuarioRepository;
+import pe.MIKHUY.Repositories.AmistadRepository;
+import pe.MIKHUY.Entities.Amistad;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class AmigoService {
     private final EstudianteService estudianteService;
     private final NotificacionRepository notificacionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AmistadRepository amistadRepository;
 
     private static final List<String> TIPOS_VALIDOS = List.of(
             "amistad_solicitud",
@@ -130,5 +133,31 @@ public class AmigoService {
             case "amistad_rechazada" -> "Solicitud rechazada";
             default -> "Notificación";
         };
+    }
+
+    public void confirmarAmistad(UUID estudiante1Id, UUID estudiante2Id) {
+        UUID a = estudiante1Id;
+        UUID b = estudiante2Id;
+        if (a.equals(b)) {
+            throw new IllegalArgumentException("Un estudiante no puede ser amigo de sí mismo");
+        }
+        if (amistadRepository.existeAmistad(a, b)) {
+            return;
+        }
+        UUID est1 = a.compareTo(b) < 0 ? a : b;
+        UUID est2 = a.compareTo(b) < 0 ? b : a;
+        amistadRepository.save(new Amistad(null, est1, est2, null));
+    }
+
+    public void eliminarAmistad(UUID estudiante1Id, UUID estudiante2Id) {
+        amistadRepository.eliminarAmistad(estudiante1Id, estudiante2Id);
+    }
+
+    public boolean sonAmigos(UUID estudiante1Id, UUID estudiante2Id) {
+        return amistadRepository.existeAmistad(estudiante1Id, estudiante2Id);
+    }
+
+    public List<UUID> getAmigosIds(UUID estudianteId) {
+        return amistadRepository.findAmigosIds(estudianteId);
     }
 }
