@@ -13,12 +13,16 @@ import pe.MIKHUY.DTOs.response.EstudianteResponse;
 import pe.MIKHUY.DTOs.response.SesionJuegoResponse;
 import pe.MIKHUY.Entities.ResultadoClasifica;
 import pe.MIKHUY.Entities.ResultadoMicronutrientes;
+import pe.MIKHUY.Entities.SesionJuego;
 import pe.MIKHUY.Repositories.ResultadoClasificaRepository;
 import pe.MIKHUY.Repositories.ResultadoMicronutrientesRepository;
+import pe.MIKHUY.Repositories.Reto7DiasRegistroRepository;
+import pe.MIKHUY.Repositories.SesionJuegoRepository;
 import pe.MIKHUY.Security.CurrentUserUtil;
 import pe.MIKHUY.Service.EstudianteService;
 import pe.MIKHUY.Service.SesionJuegoService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,6 +43,8 @@ public class SesionJuegoController {
     private final CurrentUserUtil currentUserUtil;
     private final ResultadoMicronutrientesRepository micronutrientesRepository;
     private final ResultadoClasificaRepository clasificaRepository;
+    private final Reto7DiasRegistroRepository reto7DiasRegistroRepository;
+    private final SesionJuegoRepository sesionJuegoRepository;
 
     /**
      * Iniciar sesión de juego
@@ -239,6 +245,49 @@ public class SesionJuegoController {
                 return m;
             }).toList();
             return ResponseEntity.ok(ApiResponse.success("Resultados obtenidos", dtos));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/reto7dias/estudiante/{estudianteId}")
+    @PreAuthorize("hasAnyAuthority('teacher', 'student')")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getReto7DiasByEstudiante(
+            @PathVariable UUID estudianteId) {
+        try {
+            // Buscar todas las sesiones del estudiante del juego Reto 7 Días
+            List<SesionJuego> sesiones = sesionJuegoRepository.findByEstudianteId(estudianteId)
+                    .stream()
+                    .filter(s -> s.getProgreso().getJuego().getNombre().contains("Reto 7"))
+                    .collect(java.util.stream.Collectors.toList());
+
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (SesionJuego sesion : sesiones) {
+                List<pe.MIKHUY.Entities.Reto7DiasRegistro> registros =
+                        reto7DiasRegistroRepository.findBySesionId(sesion.getId());
+                for (pe.MIKHUY.Entities.Reto7DiasRegistro r : registros) {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("diaNumero", r.getDiaNumero());
+                    m.put("momentoDia", r.getMomentoDia());
+                    m.put("alimentosFrutas", r.getAlimentosFrutas());
+                    m.put("alimentosVerduras", r.getAlimentosVerduras());
+                    m.put("alimentosProteinas", r.getAlimentosProteinas());
+                    m.put("alimentosCarbohidratos", r.getAlimentosCarbohidratos());
+                    m.put("alimentosLacteos", r.getAlimentosLacteos());
+                    m.put("alimentosDulces", r.getAlimentosDulces());
+                    m.put("emocion", r.getEmocion() != null ? r.getEmocion().toString() : null);
+                    m.put("caloriasEstimadas", r.getCaloriasEstimadas());
+                    m.put("notas", r.getNotas());
+                    m.put("fecha", r.getFechaRegistro().toLocalDate().toString());
+                    m.put("sesionId", sesion.getId());
+                    result.add(m);
+                }
+            }
+
+            // Ordenar por fecha descendente
+            result.sort((a, b) -> b.get("fecha").toString().compareTo(a.get("fecha").toString()));
+
+            return ResponseEntity.ok(ApiResponse.success("Registros obtenidos", result));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
