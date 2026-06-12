@@ -13,22 +13,28 @@ import java.util.UUID;
 public interface AmistadRepository extends JpaRepository<Amistad, UUID> {
 
     @Query("SELECT a FROM Amistad a WHERE " +
-            "(a.estudiante1Id = :a AND a.estudiante2Id = :b) OR " +
-            "(a.estudiante1Id = :b AND a.estudiante2Id = :a)")
-    Optional<Amistad> findAmistad(@Param("a") UUID a, @Param("b") UUID b);
+            "(a.solicitanteId = :a AND a.receptorId = :b) OR " +
+            "(a.solicitanteId = :b AND a.receptorId = :a)")
+    Optional<Amistad> findEntre(@Param("a") UUID a, @Param("b") UUID b);
 
-    @Query("SELECT COUNT(a) > 0 FROM Amistad a WHERE " +
-            "(a.estudiante1Id = :a AND a.estudiante2Id = :b) OR " +
-            "(a.estudiante1Id = :b AND a.estudiante2Id = :a)")
-    boolean existeAmistad(@Param("a") UUID a, @Param("b") UUID b);
+    @Query("SELECT COUNT(a) > 0 FROM Amistad a WHERE a.estado = 'aceptada' AND " +
+            "((a.solicitanteId = :a AND a.receptorId = :b) OR " +
+            "(a.solicitanteId = :b AND a.receptorId = :a))")
+    boolean sonAmigos(@Param("a") UUID a, @Param("b") UUID b);
 
-    @Query("SELECT CASE WHEN a.estudiante1Id = :miId THEN a.estudiante2Id ELSE a.estudiante1Id END " +
-            "FROM Amistad a WHERE a.estudiante1Id = :miId OR a.estudiante2Id = :miId")
+    @Query("SELECT CASE WHEN a.solicitanteId = :miId THEN a.receptorId ELSE a.solicitanteId END " +
+            "FROM Amistad a WHERE a.estado = 'aceptada' AND (a.solicitanteId = :miId OR a.receptorId = :miId)")
     List<UUID> findAmigosIds(@Param("miId") UUID miId);
+
+    @Query("SELECT a FROM Amistad a WHERE a.receptorId = :miId AND a.estado = 'pendiente'")
+    List<Amistad> findSolicitudesRecibidas(@Param("miId") UUID miId);
+
+    @Query("SELECT a FROM Amistad a WHERE a.solicitanteId = :miId AND a.estado = 'pendiente'")
+    List<Amistad> findSolicitudesEnviadas(@Param("miId") UUID miId);
 
     @Modifying
     @Query("DELETE FROM Amistad a WHERE " +
-            "(a.estudiante1Id = :a AND a.estudiante2Id = :b) OR " +
-            "(a.estudiante1Id = :b AND a.estudiante2Id = :a)")
-    void eliminarAmistad(@Param("a") UUID a, @Param("b") UUID b);
+            "(a.solicitanteId = :a AND a.receptorId = :b) OR " +
+            "(a.solicitanteId = :b AND a.receptorId = :a)")
+    void eliminar(@Param("a") UUID a, @Param("b") UUID b);
 }

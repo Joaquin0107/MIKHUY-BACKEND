@@ -210,48 +210,6 @@ public class EstudianteController {
     }
 
     /**
-     * Confirma amistad con otro estudiante (llamar al aceptar una solicitud).
-     * POST /api/estudiantes/amigos/confirmar
-     */
-    @PostMapping("/amigos/confirmar")
-    @PreAuthorize("hasAuthority('student')")
-    public ResponseEntity<ApiResponse<Void>> confirmarAmistad(
-            @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody AmistadRequest request) {
-        try {
-            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
-            EstudianteResponse yo = estudianteService.getPerfilByUsuarioId(usuarioId);
-            amigoService.confirmarAmistad(yo.getId(), request.getOtroEstudianteId());
-            return ResponseEntity.ok(ApiResponse.success("Amistad confirmada", null));
-        } catch (Exception e) {
-            log.error("❌ Error confirmando amistad: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Error: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * Elimina amistad con otro estudiante.
-     * DELETE /api/estudiantes/amigos/{otroEstudianteId}
-     */
-    @DeleteMapping("/amigos/{otroEstudianteId}")
-    @PreAuthorize("hasAuthority('student')")
-    public ResponseEntity<ApiResponse<Void>> eliminarAmistad(
-            @RequestHeader("Authorization") String authHeader,
-            @PathVariable UUID otroEstudianteId) {
-        try {
-            UUID usuarioId = currentUserUtil.getCurrentUserId(authHeader);
-            EstudianteResponse yo = estudianteService.getPerfilByUsuarioId(usuarioId);
-            amigoService.eliminarAmistad(yo.getId(), otroEstudianteId);
-            return ResponseEntity.ok(ApiResponse.success("Amistad eliminada", null));
-        } catch (Exception e) {
-            log.error("❌ Error eliminando amistad: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Error: " + e.getMessage()));
-        }
-    }
-
-    /**
      * Lista los amigos confirmados (datos completos) del estudiante autenticado.
      * GET /api/estudiantes/amigos
      */

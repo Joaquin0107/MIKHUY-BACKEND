@@ -13,6 +13,7 @@ import pe.MIKHUY.Repositories.AmistadRepository;
 import pe.MIKHUY.Entities.Amistad;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -135,29 +136,80 @@ public class AmigoService {
         };
     }
 
-    public void confirmarAmistad(UUID estudiante1Id, UUID estudiante2Id) {
-        UUID a = estudiante1Id;
-        UUID b = estudiante2Id;
-        if (a.equals(b)) {
-            throw new IllegalArgumentException("Un estudiante no puede ser amigo de sí mismo");
+    /**
+     * Crea una solicitud de amistad (estado "pendiente"). Idempotente.
+     */
+    public void enviarSolicitudAmistad(UUID solicitanteId, UUID receptorId) {
+        if (solicitanteId.equals(receptorId)) {
+            throw new IllegalArgumentException("No puedes enviarte una solicitud a ti mismo");
         }
-        if (amistadRepository.existeAmistad(a, b)) {
-            return;
+        Optional<Amistad> existente = amistadRepository.findEntre(solicitanteId, receptorId);
+        if (existente.isPresent()) {
+            return; // ya existe (pendiente o aceptada)
         }
-        UUID est1 = a.compareTo(b) < 0 ? a : b;
-        UUID est2 = a.compareTo(b) < 0 ? b : a;
-        amistadRepository.save(new Amistad(null, est1, est2, null));
+        amistadRepository.save(new Amistad(solicitanteId, receptorId, "pendiente"));
     }
 
-    public void eliminarAmistad(UUID estudiante1Id, UUID estudiante2Id) {
-        amistadRepository.eliminarAmistad(estudiante1Id, estudiante2Id);
+    /**
+     * Acepta una solicitud pendiente (el receptor acepta).
+     */
+    public void aceptarSolicitud(UUID receptorId, UUID solicitanteId) {
+        Amistad amistad = amistadRepository.findEntre(receptorId, solicitanteId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe una solicitud entre estos estudiantes"));
+
+        if (!"pendiente".equals(amistad.getEstado())) {
+            return; // ya aceptada
+        }
+        amistad.setEstado("aceptada");
+        amistadRepository.save(amistad);
     }
 
-    public boolean sonAmigos(UUID estudiante1Id, UUID estudiante2Id) {
-        return amistadRepository.existeAmistad(estudiante1Id, estudiante2Id);
+    /**
+     * Rechaza/elimina una solicitud pendiente o una amistad existente.
+     */
+    public void rechazarOEliminar(UUID miId, UUID otroId) {
+        amistadRepository.eliminar(miId, otroId);
+    }
+
+    public boolean sonAmigos(UUID a, UUID b) {
+        return amistadRepository.sonAmigos(a, b);
     }
 
     public List<UUID> getAmigosIds(UUID estudianteId) {
         return amistadRepository.findAmigosIds(estudianteId);
+    }
+
+    /**
+     * Devuelve los estudiantes que me enviaron solicitud pendiente.
+     */
+    public List<EstudianteResponse> getSolicitudesRecibidas(UUID miId) {
+        return amistadRepository.findSolicitudesRecibidas(miId).stream()
+                .map(a -> estudianteService.getById(a.getSolicitanteId()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Devuelve los IDs de estudiantes a los que les envié solicitud pendiente.
+     */
+    public List<UUID> getSolicitudesEnviadasIds(UUID miId) {
+        return amistadRepository.findSolicitudesEnviadas(miId).stream()
+                .map(Amistad::getReceptorId)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Estado de la relación entre yo y otro estudiante.
+     * Retorna: "ninguno" | "pendiente_enviada" | "pendiente_recibida" | "amigos"
+     */
+    public String getEstadoRelacion(UUID miId, UUID otroId) {
+        Optional<Amistad> rel = amistadRepository.findEntre(miId, otroId);
+        if (rel.isEmpty()) return "ninguno";
+
+        Amistad a = rel.get();
+        if ("aceptada".equals(a.getEstado())) return "amigos";
+
+        // pendiente
+        if (a.getSolicitanteId().equals(miId)) return "pendiente_enviada";
+        return "pendiente_recibida";
     }
 }
