@@ -29,7 +29,7 @@ public class UpdateProfileRequest {
     @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
     private String telefono;
 
-    @Size(max = 500, message = "La URL del avatar no puede exceder 500 caracteres")
+    @Size(max = 500000, message = "El avatar no puede exceder 500KB")
     private String avatarUrl;
 
     // Campos específicos de estudiante
